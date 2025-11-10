@@ -6,187 +6,32 @@
     <title>AniManga Tracker</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
-        
-        .container {
-            max-width: 400px;
-            margin: 0 auto;
-        }
-        
-        .header {
-            text-align: center;
-            color: white;
-            margin-bottom: 30px;
-        }
-        
-        .header h1 {
-            font-size: 24px;
-            margin-bottom: 5px;
-        }
-        
-        .tabs {
-            display: flex;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            padding: 5px;
-            margin-bottom: 20px;
-            backdrop-filter: blur(10px);
-        }
-        
-        .tab {
-            flex: 1;
-            padding: 12px;
-            text-align: center;
-            color: white;
-            border: none;
-            background: transparent;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        
-        .tab.active {
-            background: rgba(255, 255, 255, 0.2);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        }
-        
-        .content {
-            background: white;
-            border-radius: 20px;
-            padding: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-            min-height: 400px;
-        }
-        
-        .section {
-            display: none;
-        }
-        
-        .section.active {
-            display: block;
-        }
-        
-        .add-form {
-            margin-bottom: 20px;
-        }
-        
-        .input-group {
-            margin-bottom: 15px;
-        }
-        
-        .input-group label {
-            display: block;
-            margin-bottom: 5px;
-            color: #333;
-            font-weight: 500;
-        }
-        
-        .input-group input, .input-group select {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e1e5e9;
-            border-radius: 10px;
-            font-size: 16px;
-            transition: border-color 0.3s ease;
-        }
-        
-        .input-group input:focus, .input-group select:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-        
-        .btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 10px;
-            font-size: 16px;
-            cursor: pointer;
-            width: 100%;
-            transition: transform 0.2s ease;
-        }
-        
-        .btn:hover {
-            transform: translateY(-2px);
-        }
-        
-        .list {
-            max-height: 300px;
-            overflow-y: auto;
-        }
-        
-        .item {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 10px;
-            border-left: 4px solid #667eea;
-        }
-        
-        .item-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 5px;
-        }
-        
-        .item-title {
-            font-weight: bold;
-            color: #333;
-        }
-        
-        .item-status {
-            background: #667eea;
-            color: white;
-            padding: 2px 8px;
-            border-radius: 20px;
-            font-size: 12px;
-        }
-        
-        .stats-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-top: 20px;
-        }
-        
-        .stat-card {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 10px;
-            text-align: center;
-        }
-        
-        .stat-number {
-            font-size: 24px;
-            font-weight: bold;
-            color: #667eea;
-            margin-bottom: 5px;
-        }
-        
-        .stat-label {
-            font-size: 12px;
-            color: #666;
-            text-transform: uppercase;
-        }
-        
-        .loading {
-            text-align: center;
-            color: #666;
-            padding: 20px;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
+        .container { max-width: 400px; margin: 0 auto; }
+        .header { text-align: center; color: white; margin-bottom: 30px; }
+        .header h1 { font-size: 24px; margin-bottom: 5px; }
+        .tabs { display: flex; background: rgba(255,255,255,0.1); border-radius: 15px; padding: 5px; margin-bottom: 20px; }
+        .tab { flex: 1; padding: 12px; text-align: center; color: white; border: none; background: transparent; border-radius: 12px; cursor: pointer; }
+        .tab.active { background: rgba(255,255,255,0.2); }
+        .content { background: white; border-radius: 20px; padding: 20px; min-height: 400px; }
+        .section { display: none; }
+        .section.active { display: block; }
+        .add-form { margin-bottom: 20px; }
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; margin-bottom: 5px; color: #333; font-weight: 500; }
+        .input-group input, .input-group select { width: 100%; padding: 12px; border: 2px solid #e1e5e9; border-radius: 10px; font-size: 16px; }
+        .btn { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 12px 24px; border-radius: 10px; font-size: 16px; cursor: pointer; width: 100%; }
+        .list { max-height: 300px; overflow-y: auto; }
+        .item { background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 10px; border-left: 4px solid #667eea; }
+        .item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+        .item-title { font-weight: bold; color: #333; }
+        .item-status { background: #667eea; color: white; padding: 2px 8px; border-radius: 20px; font-size: 12px; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
+        .stat-card { background: #f8f9fa; padding: 15px; border-radius: 10px; text-align: center; }
+        .stat-number { font-size: 24px; font-weight: bold; color: #667eea; margin-bottom: 5px; }
+        .stat-label { font-size: 12px; color: #666; text-transform: uppercase; }
+        .loading { text-align: center; color: #666; padding: 20px; }
     </style>
 </head>
 <body>
@@ -203,7 +48,6 @@
         </div>
         
         <div class="content">
-            <!-- Аниме секция -->
             <div id="anime" class="section active">
                 <div class="add-form">
                     <h3>Добавить аниме</h3>
@@ -233,7 +77,6 @@
                 </div>
             </div>
             
-            <!-- Манга секция -->
             <div id="manga" class="section">
                 <div class="add-form">
                     <h3>Добавить мангу</h3>
@@ -263,7 +106,6 @@
                 </div>
             </div>
             
-            <!-- Статистика секция -->
             <div id="stats" class="section">
                 <h3>Моя статистика</h3>
                 <div id="statsContent">
@@ -275,42 +117,48 @@
 
     <script>
         // Хранение данных в localStorage
-        const STORAGE_KEY = 'animanga_data';
+        const STORAGE_KEY = 'animanga_tracker_data';
         
         // Инициализация Telegram Web App
         let tg = window.Telegram.WebApp;
-        tg.expand();
-        tg.enableClosingConfirmation();
+        if (tg) {
+            tg.expand();
+            tg.enableClosingConfirmation();
+        }
         
         // Загрузка данных
         function loadData() {
-            const data = localStorage.getItem(STORAGE_KEY);
-            return data ? JSON.parse(data) : {
-                anime: [],
-                manga: []
-            };
+            try {
+                const data = localStorage.getItem(STORAGE_KEY);
+                console.log('Загружены данные:', data);
+                return data ? JSON.parse(data) : { anime: [], manga: [] };
+            } catch (error) {
+                console.error('Ошибка загрузки:', error);
+                return { anime: [], manga: [] };
+            }
         }
         
         // Сохранение данных
         function saveData(data) {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+                console.log('Сохранены данные:', data);
+                alert('✅ Данные сохранены!'); // Отладочное сообщение
+            } catch (error) {
+                console.error('Ошибка сохранения:', error);
+                alert('❌ Ошибка сохранения: ' + error);
+            }
         }
         
         // Функции для переключения секций
         function showSection(sectionName) {
-            document.querySelectorAll('.section').forEach(section => {
-                section.classList.remove('active');
-            });
-            document.querySelectorAll('.tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
+            document.querySelectorAll('.section').forEach(section => section.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
             
             document.getElementById(sectionName).classList.add('active');
             event.target.classList.add('active');
             
-            if (sectionName === 'stats') {
-                loadStats();
-            }
+            if (sectionName === 'stats') loadStats();
         }
         
         // Загрузка аниме
@@ -318,7 +166,7 @@
             const data = loadData();
             const container = document.getElementById('animeList');
             
-            if (data.anime.length === 0) {
+            if (!data.anime || data.anime.length === 0) {
                 container.innerHTML = '<div class="loading">Список аниме пуст</div>';
                 return;
             }
@@ -339,7 +187,7 @@
             const data = loadData();
             const container = document.getElementById('mangaList');
             
-            if (data.manga.length === 0) {
+            if (!data.manga || data.manga.length === 0) {
                 container.innerHTML = '<div class="loading">Список манги пуст</div>';
                 return;
             }
@@ -359,10 +207,10 @@
         function loadStats() {
             const data = loadData();
             const stats = {
-                total_anime: data.anime.length,
-                total_manga: data.manga.length,
-                completed_anime: data.anime.filter(a => a.status === 'completed').length,
-                completed_manga: data.manga.filter(m => m.status === 'completed').length
+                total_anime: data.anime ? data.anime.length : 0,
+                total_manga: data.manga ? data.manga.length : 0,
+                completed_anime: data.anime ? data.anime.filter(a => a.status === 'completed').length : 0,
+                completed_manga: data.manga ? data.manga.filter(m => m.status === 'completed').length : 0
             };
             
             document.getElementById('statsContent').innerHTML = `
@@ -389,7 +237,7 @@
         
         // Добавление аниме
         function addAnime() {
-            const title = document.getElementById('animeTitle').value;
+            const title = document.getElementById('animeTitle').value.trim();
             const status = document.getElementById('animeStatus').value;
             const episodes = document.getElementById('animeEpisodes').value;
             
@@ -399,6 +247,8 @@
             }
             
             const data = loadData();
+            if (!data.anime) data.anime = [];
+            
             data.anime.push({
                 id: Date.now().toString(),
                 title: title,
@@ -412,20 +262,11 @@
             document.getElementById('animeEpisodes').value = '';
             loadAnime();
             loadStats();
-            
-            // Показываем уведомление в Telegram
-            if (tg && tg.showPopup) {
-                tg.showPopup({
-                    title: 'Успешно!',
-                    message: `Аниме "${title}" добавлено`,
-                    buttons: [{ type: 'ok' }]
-                });
-            }
         }
         
         // Добавление манги
         function addManga() {
-            const title = document.getElementById('mangaTitle').value;
+            const title = document.getElementById('mangaTitle').value.trim();
             const status = document.getElementById('mangaStatus').value;
             const chapters = document.getElementById('mangaChapters').value;
             
@@ -435,6 +276,8 @@
             }
             
             const data = loadData();
+            if (!data.manga) data.manga = [];
+            
             data.manga.push({
                 id: Date.now().toString(),
                 title: title,
@@ -448,15 +291,6 @@
             document.getElementById('mangaChapters').value = '';
             loadManga();
             loadStats();
-            
-            // Показываем уведомление в Telegram
-            if (tg && tg.showPopup) {
-                tg.showPopup({
-                    title: 'Успешно!',
-                    message: `Манга "${title}" добавлена`,
-                    buttons: [{ type: 'ok' }]
-                });
-            }
         }
         
         // Вспомогательная функция для отображения статуса
@@ -473,6 +307,7 @@
         
         // Инициализация при загрузке
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('Mini App загружен');
             loadAnime();
             loadManga();
         });
