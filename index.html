@@ -116,38 +116,41 @@
     </div>
 
     <script>
-        // Хранение данных в localStorage
-        const STORAGE_KEY = 'animanga_tracker_data';
+        // Используем Telegram Cloud Storage вместо localStorage
+        const tg = window.Telegram.WebApp;
+        const STORAGE_KEY = 'animanga_data';
         
         // Инициализация Telegram Web App
-        let tg = window.Telegram.WebApp;
-        if (tg) {
-            tg.expand();
-            tg.enableClosingConfirmation();
+        tg.expand();
+        tg.enableClosingConfirmation();
+        
+        // Загрузка данных из Cloud Storage
+        function loadData(callback) {
+            tg.CloudStorage.getItem(STORAGE_KEY, function(err, data) {
+                if (err) {
+                    console.error('Ошибка загрузки из Cloud Storage:', err);
+                    callback({ anime: [], manga: [] });
+                } else {
+                    const parsedData = data ? JSON.parse(data) : { anime: [], manga: [] };
+                    console.log('Загружены данные:', parsedData);
+                    callback(parsedData);
+                }
+            });
         }
         
-        // Загрузка данных
-        function loadData() {
-            try {
-                const data = localStorage.getItem(STORAGE_KEY);
-                console.log('Загружены данные:', data);
-                return data ? JSON.parse(data) : { anime: [], manga: [] };
-            } catch (error) {
-                console.error('Ошибка загрузки:', error);
-                return { anime: [], manga: [] };
-            }
-        }
-        
-        // Сохранение данных
-        function saveData(data) {
-            try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-                console.log('Сохранены данные:', data);
-                alert('✅ Данные сохранены!'); // Отладочное сообщение
-            } catch (error) {
-                console.error('Ошибка сохранения:', error);
-                alert('❌ Ошибка сохранения: ' + error);
-            }
+        // Сохранение данных в Cloud Storage
+        function saveData(data, callback) {
+            const dataString = JSON.stringify(data);
+            tg.CloudStorage.setItem(STORAGE_KEY, dataString, function(err) {
+                if (err) {
+                    console.error('Ошибка сохранения в Cloud Storage:', err);
+                    alert('❌ Ошибка сохранения: ' + err);
+                } else {
+                    console.log('Сохранены данные:', data);
+                    alert('✅ Данные сохранены в Cloud Storage!');
+                    if (callback) callback();
+                }
+            });
         }
         
         // Функции для переключения секций
@@ -163,76 +166,79 @@
         
         // Загрузка аниме
         function loadAnime() {
-            const data = loadData();
-            const container = document.getElementById('animeList');
-            
-            if (!data.anime || data.anime.length === 0) {
-                container.innerHTML = '<div class="loading">Список аниме пуст</div>';
-                return;
-            }
-            
-            container.innerHTML = data.anime.map(anime => `
-                <div class="item">
-                    <div class="item-header">
-                        <div class="item-title">${anime.title}</div>
-                        <div class="item-status">${getStatusText(anime.status)}</div>
+            loadData(function(data) {
+                const container = document.getElementById('animeList');
+                
+                if (!data.anime || data.anime.length === 0) {
+                    container.innerHTML = '<div class="loading">Список аниме пуст</div>';
+                    return;
+                }
+                
+                container.innerHTML = data.anime.map(anime => `
+                    <div class="item">
+                        <div class="item-header">
+                            <div class="item-title">${anime.title}</div>
+                            <div class="item-status">${getStatusText(anime.status)}</div>
+                        </div>
+                        <div>Эпизоды: ${anime.episodes || 0}</div>
                     </div>
-                    <div>Эпизоды: ${anime.episodes || 0}</div>
-                </div>
-            `).join('');
+                `).join('');
+            });
         }
         
         // Загрузка манги
         function loadManga() {
-            const data = loadData();
-            const container = document.getElementById('mangaList');
-            
-            if (!data.manga || data.manga.length === 0) {
-                container.innerHTML = '<div class="loading">Список манги пуст</div>';
-                return;
-            }
-            
-            container.innerHTML = data.manga.map(manga => `
-                <div class="item">
-                    <div class="item-header">
-                        <div class="item-title">${manga.title}</div>
-                        <div class="item-status">${getStatusText(manga.status)}</div>
+            loadData(function(data) {
+                const container = document.getElementById('mangaList');
+                
+                if (!data.manga || data.manga.length === 0) {
+                    container.innerHTML = '<div class="loading">Список манги пуст</div>';
+                    return;
+                }
+                
+                container.innerHTML = data.manga.map(manga => `
+                    <div class="item">
+                        <div class="item-header">
+                            <div class="item-title">${manga.title}</div>
+                            <div class="item-status">${getStatusText(manga.status)}</div>
+                        </div>
+                        <div>Главы: ${manga.chapters || 0}</div>
                     </div>
-                    <div>Главы: ${manga.chapters || 0}</div>
-                </div>
-            `).join('');
+                `).join('');
+            });
         }
         
         // Загрузка статистики
         function loadStats() {
-            const data = loadData();
-            const stats = {
-                total_anime: data.anime ? data.anime.length : 0,
-                total_manga: data.manga ? data.manga.length : 0,
-                completed_anime: data.anime ? data.anime.filter(a => a.status === 'completed').length : 0,
-                completed_manga: data.manga ? data.manga.filter(m => m.status === 'completed').length : 0
-            };
-            
-            document.getElementById('statsContent').innerHTML = `
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-number">${stats.total_anime}</div>
-                        <div class="stat-label">Всего аниме</div>
+            loadData(function(data) {
+                const stats = {
+                    total_anime: data.anime ? data.anime.length : 0,
+                    total_manga: data.manga ? data.manga.length : 0,
+                    completed_anime: data.anime ? data.anime.filter(a => a.status === 'completed').length : 0,
+                    completed_manga: data.manga ? data.manga.filter(m => m.status === 'completed').length : 0
+                };
+                
+                document.getElementById('statsContent').innerHTML = `
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-number">${stats.total_anime}</div>
+                            <div class="stat-label">Всего аниме</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">${stats.total_manga}</div>
+                            <div class="stat-label">Всего манги</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">${stats.completed_anime}</div>
+                            <div class="stat-label">Просмотрено аниме</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">${stats.completed_manga}</div>
+                            <div class="stat-label">Прочитано манги</div>
+                        </div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-number">${stats.total_manga}</div>
-                        <div class="stat-label">Всего манги</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number">${stats.completed_anime}</div>
-                        <div class="stat-label">Просмотрено аниме</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number">${stats.completed_manga}</div>
-                        <div class="stat-label">Прочитано манги</div>
-                    </div>
-                </div>
-            `;
+                `;
+            });
         }
         
         // Добавление аниме
@@ -246,22 +252,24 @@
                 return;
             }
             
-            const data = loadData();
-            if (!data.anime) data.anime = [];
-            
-            data.anime.push({
-                id: Date.now().toString(),
-                title: title,
-                status: status,
-                episodes: parseInt(episodes) || 0,
-                added_date: new Date().toISOString()
+            loadData(function(data) {
+                if (!data.anime) data.anime = [];
+                
+                data.anime.push({
+                    id: Date.now().toString(),
+                    title: title,
+                    status: status,
+                    episodes: parseInt(episodes) || 0,
+                    added_date: new Date().toISOString()
+                });
+                
+                saveData(data, function() {
+                    document.getElementById('animeTitle').value = '';
+                    document.getElementById('animeEpisodes').value = '';
+                    loadAnime();
+                    loadStats();
+                });
             });
-            
-            saveData(data);
-            document.getElementById('animeTitle').value = '';
-            document.getElementById('animeEpisodes').value = '';
-            loadAnime();
-            loadStats();
         }
         
         // Добавление манги
@@ -275,22 +283,24 @@
                 return;
             }
             
-            const data = loadData();
-            if (!data.manga) data.manga = [];
-            
-            data.manga.push({
-                id: Date.now().toString(),
-                title: title,
-                status: status,
-                chapters: parseInt(chapters) || 0,
-                added_date: new Date().toISOString()
+            loadData(function(data) {
+                if (!data.manga) data.manga = [];
+                
+                data.manga.push({
+                    id: Date.now().toString(),
+                    title: title,
+                    status: status,
+                    chapters: parseInt(chapters) || 0,
+                    added_date: new Date().toISOString()
+                });
+                
+                saveData(data, function() {
+                    document.getElementById('mangaTitle').value = '';
+                    document.getElementById('mangaChapters').value = '';
+                    loadManga();
+                    loadStats();
+                });
             });
-            
-            saveData(data);
-            document.getElementById('mangaTitle').value = '';
-            document.getElementById('mangaChapters').value = '';
-            loadManga();
-            loadStats();
         }
         
         // Вспомогательная функция для отображения статуса
@@ -307,7 +317,7 @@
         
         // Инициализация при загрузке
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('Mini App загружен');
+            console.log('Mini App загружен, используется Cloud Storage');
             loadAnime();
             loadManga();
         });
