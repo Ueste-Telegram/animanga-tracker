@@ -270,6 +270,41 @@
             font-size: 14px;
             line-height: 1.4;
         }
+
+        .rating-stars {
+            display: flex;
+            gap: 2px;
+            margin: 8px 0;
+        }
+
+        .star {
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: #666;
+        }
+
+        .star.active {
+            color: #FFD700;
+            text-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
+        }
+
+        .star:hover {
+            transform: scale(1.2);
+        }
+
+        .item-rating {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin: 5px 0;
+        }
+
+        .rating-value {
+            color: #FFD700;
+            font-weight: 600;
+            font-size: 14px;
+        }
         
         .stats-grid {
             display: grid;
@@ -366,6 +401,27 @@
             border: 2px dashed rgba(255, 255, 255, 0.1);
             flex-shrink: 0;
         }
+
+        .rating-section {
+            margin: 15px 0;
+        }
+
+        .rating-section label {
+            display: block;
+            margin-bottom: 8px;
+            color: #cccccc;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .average-rating {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 5px;
+            font-size: 14px;
+            color: #b0b0b0;
+        }
     </style>
 </head>
 <body>
@@ -409,6 +465,17 @@
                         <label>Эпизоды</label>
                         <input type="number" id="animeEpisodes" placeholder="Количество эпизодов">
                     </div>
+                    <div class="rating-section">
+                        <label>Рейтинг</label>
+                        <div class="rating-stars" id="animeRating">
+                            <span class="star" data-rating="1">☆</span>
+                            <span class="star" data-rating="2">☆</span>
+                            <span class="star" data-rating="3">☆</span>
+                            <span class="star" data-rating="4">☆</span>
+                            <span class="star" data-rating="5">☆</span>
+                        </div>
+                        <div style="color: #888; font-size: 12px; margin-top: 5px;">Нажмите на звезду для оценки</div>
+                    </div>
                     <button class="btn" onclick="addAnime()">🎬 Добавить аниме</button>
                 </div>
                 
@@ -448,6 +515,17 @@
                         <label>Главы</label>
                         <input type="number" id="mangaChapters" placeholder="Количество глав">
                     </div>
+                    <div class="rating-section">
+                        <label>Рейтинг</label>
+                        <div class="rating-stars" id="mangaRating">
+                            <span class="star" data-rating="1">☆</span>
+                            <span class="star" data-rating="2">☆</span>
+                            <span class="star" data-rating="3">☆</span>
+                            <span class="star" data-rating="4">☆</span>
+                            <span class="star" data-rating="5">☆</span>
+                        </div>
+                        <div style="color: #888; font-size: 12px; margin-top: 5px;">Нажмите на звезду для оценки</div>
+                    </div>
                     <button class="btn" onclick="addManga()">📚 Добавить мангу</button>
                 </div>
                 
@@ -475,6 +553,8 @@
         const STORAGE_KEY = 'animanga_dark_theme';
         let editingItem = null;
         let editingType = null;
+        let currentAnimeRating = 0;
+        let currentMangaRating = 0;
         
         // Инициализация Telegram Web App
         let tg = window.Telegram.WebApp;
@@ -519,6 +599,70 @@
             }
         }
         
+        // Инициализация системы рейтингов
+        function initializeRatingSystem() {
+            // Рейтинг для аниме
+            const animeStars = document.querySelectorAll('#animeRating .star');
+            animeStars.forEach(star => {
+                star.addEventListener('click', function() {
+                    const rating = parseInt(this.getAttribute('data-rating'));
+                    currentAnimeRating = rating;
+                    updateStars('animeRating', rating);
+                });
+            });
+
+            // Рейтинг для манги
+            const mangaStars = document.querySelectorAll('#mangaRating .star');
+            mangaStars.forEach(star => {
+                star.addEventListener('click', function() {
+                    const rating = parseInt(this.getAttribute('data-rating'));
+                    currentMangaRating = rating;
+                    updateStars('mangaRating', rating);
+                });
+            });
+        }
+
+        // Обновление отображения звезд
+        function updateStars(containerId, rating) {
+            const stars = document.querySelectorAll(`#${containerId} .star`);
+            stars.forEach(star => {
+                const starRating = parseInt(star.getAttribute('data-rating'));
+                if (starRating <= rating) {
+                    star.textContent = '★';
+                    star.classList.add('active');
+                } else {
+                    star.textContent = '☆';
+                    star.classList.remove('active');
+                }
+            });
+        }
+
+        // Сброс рейтинга
+        function resetRating(type) {
+            if (type === 'anime') {
+                currentAnimeRating = 0;
+                updateStars('animeRating', 0);
+            } else {
+                currentMangaRating = 0;
+                updateStars('mangaRating', 0);
+            }
+        }
+
+        // Отображение рейтинга в виде звезд
+        function renderRatingStars(rating) {
+            if (!rating || rating === 0) return '<span style="color: #666; font-size: 14px;">Не оценено</span>';
+            
+            let stars = '';
+            for (let i = 1; i <= 5; i++) {
+                if (i <= rating) {
+                    stars += '<span style="color: #FFD700;">★</span>';
+                } else {
+                    stars += '<span style="color: #666;">☆</span>';
+                }
+            }
+            return `<div class="item-rating"><span class="rating-value">${rating}/5</span> ${stars}</div>`;
+        }
+        
         // Функции для переключения секций
         function showSection(sectionName) {
             document.querySelectorAll('.section').forEach(section => section.classList.remove('active'));
@@ -558,6 +702,7 @@
                                 <button class="btn btn-delete" onclick="deleteAnime('${anime.id}')">🗑️</button>
                             </div>
                         </div>
+                        ${renderRatingStars(anime.rating)}
                         <div class="item-details">
                             <div>Эпизоды: ${anime.episodes || 0}</div>
                             <div>Добавлено: ${formatDate(anime.added_date)}</div>
@@ -587,12 +732,27 @@
                                 <label>Эпизоды</label>
                                 <input type="number" id="edit-anime-episodes-${anime.id}" value="${anime.episodes || 0}">
                             </div>
+                            <div class="rating-section">
+                                <label>Рейтинг</label>
+                                <div class="rating-stars" id="edit-anime-rating-${anime.id}">
+                                    <span class="star" data-rating="1">☆</span>
+                                    <span class="star" data-rating="2">☆</span>
+                                    <span class="star" data-rating="3">☆</span>
+                                    <span class="star" data-rating="4">☆</span>
+                                    <span class="star" data-rating="5">☆</span>
+                                </div>
+                            </div>
                             <button class="btn" onclick="saveAnimeEdit('${anime.id}')">💾 Сохранить</button>
                             <button class="btn btn-cancel" onclick="cancelEdit('${anime.id}', 'anime')">❌ Отмена</button>
                         </div>
                     </div>
                 </div>
             `).join('');
+
+            // Инициализация рейтингов для редактирования
+            data.anime.forEach(anime => {
+                initializeEditRating('anime', anime.id, anime.rating || 0);
+            });
         }
         
         // Загрузка манги
@@ -623,6 +783,7 @@
                                 <button class="btn btn-delete" onclick="deleteManga('${manga.id}')">🗑️</button>
                             </div>
                         </div>
+                        ${renderRatingStars(manga.rating)}
                         <div class="item-details">
                             <div>Главы: ${manga.chapters || 0}</div>
                             <div>Добавлено: ${formatDate(manga.added_date)}</div>
@@ -652,12 +813,58 @@
                                 <label>Главы</label>
                                 <input type="number" id="edit-manga-chapters-${manga.id}" value="${manga.chapters || 0}">
                             </div>
+                            <div class="rating-section">
+                                <label>Рейтинг</label>
+                                <div class="rating-stars" id="edit-manga-rating-${manga.id}">
+                                    <span class="star" data-rating="1">☆</span>
+                                    <span class="star" data-rating="2">☆</span>
+                                    <span class="star" data-rating="3">☆</span>
+                                    <span class="star" data-rating="4">☆</span>
+                                    <span class="star" data-rating="5">☆</span>
+                                </div>
+                            </div>
                             <button class="btn" onclick="saveMangaEdit('${manga.id}')">💾 Сохранить</button>
                             <button class="btn btn-cancel" onclick="cancelEdit('${manga.id}', 'manga')">❌ Отмена</button>
                         </div>
                     </div>
                 </div>
             `).join('');
+
+            // Инициализация рейтингов для редактирования
+            data.manga.forEach(manga => {
+                initializeEditRating('manga', manga.id, manga.rating || 0);
+            });
+        }
+        
+        // Инициализация рейтинга для редактирования
+        function initializeEditRating(type, id, currentRating) {
+            const stars = document.querySelectorAll(`#edit-${type}-rating-${id} .star`);
+            let editRating = currentRating;
+            
+            stars.forEach(star => {
+                star.addEventListener('click', function() {
+                    editRating = parseInt(this.getAttribute('data-rating'));
+                    updateStars(`edit-${type}-rating-${id}`, editRating);
+                });
+                
+                // Установить начальное состояние
+                const starRating = parseInt(star.getAttribute('data-rating'));
+                if (starRating <= currentRating) {
+                    star.textContent = '★';
+                    star.classList.add('active');
+                } else {
+                    star.textContent = '☆';
+                    star.classList.remove('active');
+                }
+            });
+
+            // Сохраняем рейтинг для использования при сохранении
+            window[`edit${type.charAt(0).toUpperCase() + type.slice(1)}Rating_${id}`] = editRating;
+        }
+
+        // Получить рейтинг редактирования
+        function getEditRating(type, id) {
+            return window[`edit${type.charAt(0).toUpperCase() + type.slice(1)}Rating_${id}`] || 0;
         }
         
         // Предпросмотр обложки при редактировании
@@ -717,6 +924,7 @@
                                 <button class="btn btn-delete" onclick="deleteAnime('${anime.id}')">🗑️</button>
                             </div>
                         </div>
+                        ${renderRatingStars(anime.rating)}
                         <div class="item-details">
                             <div>Эпизоды: ${anime.episodes || 0}</div>
                             <div>Добавлено: ${formatDate(anime.added_date)}</div>
@@ -765,6 +973,7 @@
                                 <button class="btn btn-delete" onclick="deleteManga('${manga.id}')">🗑️</button>
                             </div>
                         </div>
+                        ${renderRatingStars(manga.rating)}
                         <div class="item-details">
                             <div>Главы: ${manga.chapters || 0}</div>
                             <div>Добавлено: ${formatDate(manga.added_date)}</div>
@@ -777,31 +986,99 @@
         // Загрузка статистики
         function loadStats() {
             const data = loadData();
-            const stats = {
-                total_anime: data.anime ? data.anime.length : 0,
-                total_manga: data.manga ? data.manga.length : 0,
-                completed_anime: data.anime ? data.anime.filter(a => a.status === 'completed').length : 0,
-                completed_manga: data.manga ? data.manga.filter(m => m.status === 'completed').length : 0
-            };
             
+            // Статистика по аниме
+            const animeStats = {
+                total: data.anime ? data.anime.length : 0,
+                planned: data.anime ? data.anime.filter(a => a.status === 'planned').length : 0,
+                watching: data.anime ? data.anime.filter(a => a.status === 'watching').length : 0,
+                completed: data.anime ? data.anime.filter(a => a.status === 'completed').length : 0,
+                dropped: data.anime ? data.anime.filter(a => a.status === 'dropped').length : 0,
+                rated: data.anime ? data.anime.filter(a => a.rating && a.rating > 0).length : 0,
+                averageRating: 0
+            };
+
+            // Статистика по манге
+            const mangaStats = {
+                total: data.manga ? data.manga.length : 0,
+                planned: data.manga ? data.manga.filter(m => m.status === 'planned').length : 0,
+                reading: data.manga ? data.manga.filter(m => m.status === 'reading').length : 0,
+                completed: data.manga ? data.manga.filter(m => m.status === 'completed').length : 0,
+                dropped: data.manga ? data.manga.filter(m => m.status === 'dropped').length : 0,
+                rated: data.manga ? data.manga.filter(m => m.rating && m.rating > 0).length : 0,
+                averageRating: 0
+            };
+
+            // Расчет средних рейтингов
+            if (animeStats.rated > 0) {
+                const totalRating = data.anime
+                    .filter(a => a.rating && a.rating > 0)
+                    .reduce((sum, a) => sum + a.rating, 0);
+                animeStats.averageRating = (totalRating / animeStats.rated).toFixed(1);
+            }
+
+            if (mangaStats.rated > 0) {
+                const totalRating = data.manga
+                    .filter(m => m.rating && m.rating > 0)
+                    .reduce((sum, m) => sum + m.rating, 0);
+                mangaStats.averageRating = (totalRating / mangaStats.rated).toFixed(1);
+            }
+
             document.getElementById('statsContent').innerHTML = `
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-number">${stats.total_anime}</div>
-                        <div class="stat-label">Всего аниме</div>
+                <div style="margin-bottom: 20px;">
+                    <h4 style="color: #667eea; margin-bottom: 10px;">🎬 Аниме</h4>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-number">${animeStats.total}</div>
+                            <div class="stat-label">Всего</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">${animeStats.completed}</div>
+                            <div class="stat-label">Просмотрено</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">${animeStats.watching}</div>
+                            <div class="stat-label">Смотрю</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">${animeStats.planned}</div>
+                            <div class="stat-label">Запланировано</div>
+                        </div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-number">${stats.total_manga}</div>
-                        <div class="stat-label">Всего манги</div>
+                    ${animeStats.averageRating > 0 ? `
+                        <div class="average-rating" style="margin-top: 10px;">
+                            <span>Средний рейтинг: ${animeStats.averageRating}/5</span>
+                            <div>${renderRatingStars(Math.round(animeStats.averageRating))}</div>
+                        </div>
+                    ` : ''}
+                </div>
+
+                <div>
+                    <h4 style="color: #667eea; margin-bottom: 10px;">📚 Манга</h4>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-number">${mangaStats.total}</div>
+                            <div class="stat-label">Всего</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">${mangaStats.completed}</div>
+                            <div class="stat-label">Прочитано</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">${mangaStats.reading}</div>
+                            <div class="stat-label">Читаю</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">${mangaStats.planned}</div>
+                            <div class="stat-label">Запланировано</div>
+                        </div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-number">${stats.completed_anime}</div>
-                        <div class="stat-label">Просмотрено</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number">${stats.completed_manga}</div>
-                        <div class="stat-label">Прочитано</div>
-                    </div>
+                    ${mangaStats.averageRating > 0 ? `
+                        <div class="average-rating" style="margin-top: 10px;">
+                            <span>Средний рейтинг: ${mangaStats.averageRating}/5</span>
+                            <div>${renderRatingStars(Math.round(mangaStats.averageRating))}</div>
+                        </div>
+                    ` : ''}
                 </div>
             `;
         }
@@ -827,6 +1104,7 @@
                 cover: cover || null,
                 status: status,
                 episodes: parseInt(episodes) || 0,
+                rating: currentAnimeRating,
                 added_date: new Date().toISOString()
             });
             
@@ -835,6 +1113,7 @@
                 document.getElementById('animeCover').value = '';
                 document.getElementById('animeEpisodes').value = '';
                 document.getElementById('animeCoverPreview').style.display = 'none';
+                resetRating('anime');
                 loadAnime();
                 loadStats();
                 showNotification(`Аниме "${title}" добавлено!`);
@@ -864,6 +1143,7 @@
                 cover: cover || null,
                 status: status,
                 chapters: parseInt(chapters) || 0,
+                rating: currentMangaRating,
                 added_date: new Date().toISOString()
             });
             
@@ -872,6 +1152,7 @@
                 document.getElementById('mangaCover').value = '';
                 document.getElementById('mangaChapters').value = '';
                 document.getElementById('mangaCoverPreview').style.display = 'none';
+                resetRating('manga');
                 loadManga();
                 loadStats();
                 showNotification(`Манга "${title}" добавлена!`);
@@ -918,6 +1199,7 @@
             const cover = document.getElementById(`edit-anime-cover-${id}`).value.trim();
             const status = document.getElementById(`edit-anime-status-${id}`).value;
             const episodes = document.getElementById(`edit-anime-episodes-${id}`).value;
+            const rating = getEditRating('anime', id);
             
             if (!title) {
                 alert('Введите название аниме');
@@ -934,6 +1216,7 @@
                     cover: cover || null,
                     status: status,
                     episodes: parseInt(episodes) || 0,
+                    rating: rating,
                     last_updated: new Date().toISOString()
                 };
                 
@@ -954,6 +1237,7 @@
             const cover = document.getElementById(`edit-manga-cover-${id}`).value.trim();
             const status = document.getElementById(`edit-manga-status-${id}`).value;
             const chapters = document.getElementById(`edit-manga-chapters-${id}`).value;
+            const rating = getEditRating('manga', id);
             
             if (!title) {
                 alert('Введите название манги');
@@ -970,6 +1254,7 @@
                     cover: cover || null,
                     status: status,
                     chapters: parseInt(chapters) || 0,
+                    rating: rating,
                     last_updated: new Date().toISOString()
                 };
                 
@@ -1059,6 +1344,7 @@
         
         // Инициализация при загрузке
         document.addEventListener('DOMContentLoaded', function() {
+            initializeRatingSystem();
             loadAnime();
             loadManga();
         });
