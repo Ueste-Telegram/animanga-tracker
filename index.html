@@ -118,7 +118,7 @@
             font-size: 14px;
         }
         
-        .input-group input, .input-group select {
+        .input-group input, .input-group select, .input-group textarea {
             width: 100%;
             padding: 14px;
             border: 2px solid rgba(255, 255, 255, 0.1);
@@ -127,9 +127,10 @@
             background: rgba(255, 255, 255, 0.08);
             color: white;
             transition: all 0.3s ease;
+            resize: vertical;
         }
         
-        .input-group input:focus, .input-group select:focus {
+        .input-group input:focus, .input-group select:focus, .input-group textarea:focus {
             outline: none;
             border-color: #667eea;
             background: rgba(255, 255, 255, 0.12);
@@ -529,6 +530,119 @@
             background: linear-gradient(135deg, #667eea, #764ba2);
             border-radius: 3px;
         }
+
+        /* Стили для тегов */
+        .tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 10px 0;
+        }
+
+        .tag {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 11px;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s ease;
+        }
+
+        .tag:hover {
+            transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .tag-remove {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 12px;
+            padding: 0;
+            width: 14px;
+            height: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+
+        .tag-remove:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .tags-input-container {
+            position: relative;
+        }
+
+        .suggested-tags {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: rgba(40, 40, 60, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            max-height: 150px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+        }
+
+        .suggested-tag {
+            padding: 8px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            transition: background 0.2s ease;
+        }
+
+        .suggested-tag:hover {
+            background: rgba(102, 126, 234, 0.3);
+        }
+
+        .suggested-tag:last-child {
+            border-bottom: none;
+        }
+
+        .filter-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .filter-tag {
+            background: rgba(255, 255, 255, 0.1);
+            color: #cccccc;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+
+        .filter-tag.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-color: #667eea;
+        }
+
+        .filter-tag:hover {
+            background: rgba(102, 126, 234, 0.3);
+            color: white;
+        }
+
+        .tags-help {
+            color: #888;
+            font-size: 12px;
+            margin-top: 5px;
+        }
     </style>
 </head>
 <body>
@@ -572,6 +686,15 @@
                         <label>Эпизоды</label>
                         <input type="number" id="animeEpisodes" placeholder="Количество эпизодов">
                     </div>
+                    <div class="input-group">
+                        <label>Теги (через запятую)</label>
+                        <div class="tags-input-container">
+                            <input type="text" id="animeTags" placeholder="например: комедия, приключения, фэнтези">
+                            <div class="suggested-tags" id="animeSuggestedTags"></div>
+                        </div>
+                        <div class="tags-help">Начните вводить тег для подсказок</div>
+                        <div class="tags-container" id="animeTagsPreview"></div>
+                    </div>
                     <div class="rating-section">
                         <label>Рейтинг</label>
                         <div class="rating-stars" id="animeRating">
@@ -590,6 +713,7 @@
                 <div class="search-box">
                     <input type="text" id="animeSearch" placeholder="🔍 Поиск аниме..." onkeyup="searchAnime()">
                 </div>
+                <div class="filter-tags" id="animeFilterTags"></div>
                 <div id="animeList" class="list">
                     <div class="loading">Загрузка...</div>
                 </div>
@@ -622,6 +746,15 @@
                         <label>Главы</label>
                         <input type="number" id="mangaChapters" placeholder="Количество глав">
                     </div>
+                    <div class="input-group">
+                        <label>Теги (через запятую)</label>
+                        <div class="tags-input-container">
+                            <input type="text" id="mangaTags" placeholder="например: комедия, приключения, фэнтези">
+                            <div class="suggested-tags" id="mangaSuggestedTags"></div>
+                        </div>
+                        <div class="tags-help">Начните вводить тег для подсказок</div>
+                        <div class="tags-container" id="mangaTagsPreview"></div>
+                    </div>
                     <div class="rating-section">
                         <label>Рейтинг</label>
                         <div class="rating-stars" id="mangaRating">
@@ -640,6 +773,7 @@
                 <div class="search-box">
                     <input type="text" id="mangaSearch" placeholder="🔍 Поиск манги..." onkeyup="searchManga()">
                 </div>
+                <div class="filter-tags" id="mangaFilterTags"></div>
                 <div id="mangaList" class="list">
                     <div class="loading">Загрузка...</div>
                 </div>
@@ -663,6 +797,21 @@
         let currentAnimeRating = 0;
         let currentMangaRating = 0;
         let charts = {}; // Для хранения объектов графиков
+        let activeFilterTags = {
+            anime: [],
+            manga: []
+        };
+        
+        // Предустановленные теги для подсказок
+        const SUGGESTED_TAGS = [
+            'комедия', 'драма', 'романтика', 'фэнтези', 'научная фантастика',
+            'приключения', 'боевик', 'мистика', 'ужасы', 'детектив',
+            'повседневность', 'школа', 'сёнэн', 'сёдзё', 'сэйнэн',
+            'дзясэй', 'меха', 'махо-сёдзё', 'спокон', 'гарем',
+            'reverse harem', 'суперспособности', 'самураи', 'психологическое',
+            'трагедия', 'исторический', 'военный', 'киберпанк', 'постапокалипсис',
+            'вампиры', 'зомби', 'музыкальный', 'спорт', 'кулинария'
+        ];
         
         // Инициализация Telegram Web App
         let tg = window.Telegram.WebApp;
@@ -782,6 +931,117 @@
             if (sectionName === 'stats') loadStats();
         }
         
+        // Парсинг тегов из строки
+        function parseTags(tagsString) {
+            return tagsString.split(',')
+                .map(tag => tag.trim())
+                .filter(tag => tag.length > 0)
+                .map(tag => tag.toLowerCase());
+        }
+        
+        // Отображение тегов в виде бейджиков
+        function renderTags(tags) {
+            if (!tags || tags.length === 0) return '';
+            
+            return tags.map(tag => `
+                <span class="tag">
+                    ${tag}
+                </span>
+            `).join('');
+        }
+        
+        // Инициализация системы тегов
+        function initializeTagsSystem() {
+            // Для аниме
+            const animeTagsInput = document.getElementById('animeTags');
+            const animeTagsPreview = document.getElementById('animeTagsPreview');
+            const animeSuggestedTags = document.getElementById('animeSuggestedTags');
+            
+            animeTagsInput.addEventListener('input', function() {
+                const tags = parseTags(this.value);
+                animeTagsPreview.innerHTML = renderTags(tags);
+                
+                // Показ подсказок
+                const input = this.value.trim();
+                if (input.length > 0) {
+                    const suggestions = SUGGESTED_TAGS.filter(tag => 
+                        tag.toLowerCase().includes(input.toLowerCase())
+                    ).slice(0, 5);
+                    
+                    if (suggestions.length > 0) {
+                        animeSuggestedTags.innerHTML = suggestions.map(tag => `
+                            <div class="suggested-tag" onclick="selectSuggestedTag('anime', '${tag}')">
+                                ${tag}
+                            </div>
+                        `).join('');
+                        animeSuggestedTags.style.display = 'block';
+                    } else {
+                        animeSuggestedTags.style.display = 'none';
+                    }
+                } else {
+                    animeSuggestedTags.style.display = 'none';
+                }
+            });
+            
+            // Для манги
+            const mangaTagsInput = document.getElementById('mangaTags');
+            const mangaTagsPreview = document.getElementById('mangaTagsPreview');
+            const mangaSuggestedTags = document.getElementById('mangaSuggestedTags');
+            
+            mangaTagsInput.addEventListener('input', function() {
+                const tags = parseTags(this.value);
+                mangaTagsPreview.innerHTML = renderTags(tags);
+                
+                // Показ подсказок
+                const input = this.value.trim();
+                if (input.length > 0) {
+                    const suggestions = SUGGESTED_TAGS.filter(tag => 
+                        tag.toLowerCase().includes(input.toLowerCase())
+                    ).slice(0, 5);
+                    
+                    if (suggestions.length > 0) {
+                        mangaSuggestedTags.innerHTML = suggestions.map(tag => `
+                            <div class="suggested-tag" onclick="selectSuggestedTag('manga', '${tag}')">
+                                ${tag}
+                            </div>
+                        `).join('');
+                        mangaSuggestedTags.style.display = 'block';
+                    } else {
+                        mangaSuggestedTags.style.display = 'none';
+                    }
+                } else {
+                    mangaSuggestedTags.style.display = 'none';
+                }
+            });
+            
+            // Скрытие подсказок при клике вне поля
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.tags-input-container')) {
+                    animeSuggestedTags.style.display = 'none';
+                    mangaSuggestedTags.style.display = 'none';
+                }
+            });
+        }
+        
+        // Выбор тега из подсказок
+        function selectSuggestedTag(type, tag) {
+            const input = document.getElementById(`${type}Tags`);
+            const currentTags = parseTags(input.value);
+            
+            if (!currentTags.includes(tag)) {
+                currentTags.push(tag);
+                input.value = currentTags.join(', ');
+                
+                // Обновляем превью
+                const preview = document.getElementById(`${type}TagsPreview`);
+                preview.innerHTML = renderTags(currentTags);
+            }
+            
+            // Скрываем подсказки
+            document.getElementById(`${type}SuggestedTags`).style.display = 'none';
+            input.focus();
+        }
+        
         // Загрузка аниме
         function loadAnime() {
             const data = loadData();
@@ -789,78 +1049,108 @@
             
             if (!data.anime || data.anime.length === 0) {
                 container.innerHTML = '<div class="loading">📺 Список аниме пуст</div>';
+                updateFilterTags('anime', data.anime || []);
                 return;
             }
             
-            container.innerHTML = data.anime.map(anime => `
-                <div class="item" id="anime-${anime.id}">
-                    ${anime.cover ? 
-                        `<img src="${anime.cover}" class="item-cover" alt="${anime.title}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"> 
-                         <div class="no-cover" style="display: none;">Нет обложки</div>` :
-                        `<div class="no-cover">Нет обложки</div>`
-                    }
-                    <div class="item-content">
-                        <div class="item-header">
-                            <div style="flex: 1;">
-                                <div class="item-title">${anime.title}</div>
-                                <div class="item-status">${getStatusText(anime.status)}</div>
-                            </div>
-                            <div class="item-actions">
-                                <button class="btn btn-edit" onclick="editAnime('${anime.id}')">✏️</button>
-                                <button class="btn btn-delete" onclick="deleteAnime('${anime.id}')">🗑️</button>
-                            </div>
-                        </div>
-                        ${renderRatingStars(anime.rating)}
-                        <div class="item-details">
-                            <div>Эпизоды: ${anime.episodes || 0}</div>
-                            <div>Добавлено: ${formatDate(anime.added_date)}</div>
-                        </div>
-                        <div class="edit-form" id="edit-anime-${anime.id}">
-                            <h4>✏️ Редактировать аниме</h4>
-                            <div class="input-group">
-                                <label>Название</label>
-                                <input type="text" id="edit-anime-title-${anime.id}" value="${anime.title}">
-                            </div>
-                            <div class="input-group">
-                                <label>Обложка (URL)</label>
-                                <input type="text" id="edit-anime-cover-${anime.id}" value="${anime.cover || ''}" onchange="previewEditCover('anime', '${anime.id}')">
-                                <small style="color: #888; font-size: 12px;">Вставьте ссылку на изображение обложки</small>
-                                <img id="edit-anime-cover-preview-${anime.id}" class="cover-preview" alt="Предпросмотр обложки" style="${anime.cover ? 'display: block;' : 'display: none;'}" src="${anime.cover || ''}">
-                            </div>
-                            <div class="input-group">
-                                <label>Статус</label>
-                                <select id="edit-anime-status-${anime.id}">
-                                    <option value="planned" ${anime.status === 'planned' ? 'selected' : ''}>📅 Запланировано</option>
-                                    <option value="watching" ${anime.status === 'watching' ? 'selected' : ''}>👀 Смотрю</option>
-                                    <option value="completed" ${anime.status === 'completed' ? 'selected' : ''}>✅ Просмотрено</option>
-                                    <option value="dropped" ${anime.status === 'dropped' ? 'selected' : ''}>❌ Брошено</option>
-                                </select>
-                            </div>
-                            <div class="input-group">
-                                <label>Эпизоды</label>
-                                <input type="number" id="edit-anime-episodes-${anime.id}" value="${anime.episodes || 0}">
-                            </div>
-                            <div class="rating-section">
-                                <label>Рейтинг</label>
-                                <div class="rating-stars" id="edit-anime-rating-${anime.id}">
-                                    <span class="star" data-rating="1">☆</span>
-                                    <span class="star" data-rating="2">☆</span>
-                                    <span class="star" data-rating="3">☆</span>
-                                    <span class="star" data-rating="4">☆</span>
-                                    <span class="star" data-rating="5">☆</span>
+            // Фильтрация по тегам
+            let filteredAnime = data.anime;
+            if (activeFilterTags.anime.length > 0) {
+                filteredAnime = data.anime.filter(anime => 
+                    activeFilterTags.anime.every(tag => 
+                        anime.tags && anime.tags.includes(tag)
+                    )
+                );
+            }
+            
+            if (filteredAnime.length === 0) {
+                container.innerHTML = '<div class="loading">🔍 Ничего не найдено по выбранным тегам</div>';
+            } else {
+                container.innerHTML = filteredAnime.map(anime => `
+                    <div class="item" id="anime-${anime.id}">
+                        ${anime.cover ? 
+                            `<img src="${anime.cover}" class="item-cover" alt="${anime.title}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"> 
+                             <div class="no-cover" style="display: none;">Нет обложки</div>` :
+                            `<div class="no-cover">Нет обложки</div>`
+                        }
+                        <div class="item-content">
+                            <div class="item-header">
+                                <div style="flex: 1;">
+                                    <div class="item-title">${anime.title}</div>
+                                    <div class="item-status">${getStatusText(anime.status)}</div>
+                                </div>
+                                <div class="item-actions">
+                                    <button class="btn btn-edit" onclick="editAnime('${anime.id}')">✏️</button>
+                                    <button class="btn btn-delete" onclick="deleteAnime('${anime.id}')">🗑️</button>
                                 </div>
                             </div>
-                            <button class="btn" onclick="saveAnimeEdit('${anime.id}')">💾 Сохранить</button>
-                            <button class="btn btn-cancel" onclick="cancelEdit('${anime.id}', 'anime')">❌ Отмена</button>
+                            ${anime.tags && anime.tags.length > 0 ? `
+                                <div class="tags-container">
+                                    ${renderTags(anime.tags)}
+                                </div>
+                            ` : ''}
+                            ${renderRatingStars(anime.rating)}
+                            <div class="item-details">
+                                <div>Эпизоды: ${anime.episodes || 0}</div>
+                                <div>Добавлено: ${formatDate(anime.added_date)}</div>
+                            </div>
+                            <div class="edit-form" id="edit-anime-${anime.id}">
+                                <h4>✏️ Редактировать аниме</h4>
+                                <div class="input-group">
+                                    <label>Название</label>
+                                    <input type="text" id="edit-anime-title-${anime.id}" value="${anime.title}">
+                                </div>
+                                <div class="input-group">
+                                    <label>Обложка (URL)</label>
+                                    <input type="text" id="edit-anime-cover-${anime.id}" value="${anime.cover || ''}" onchange="previewEditCover('anime', '${anime.id}')">
+                                    <small style="color: #888; font-size: 12px;">Вставьте ссылку на изображение обложки</small>
+                                    <img id="edit-anime-cover-preview-${anime.id}" class="cover-preview" alt="Предпросмотр обложки" style="${anime.cover ? 'display: block;' : 'display: none;'}" src="${anime.cover || ''}">
+                                </div>
+                                <div class="input-group">
+                                    <label>Статус</label>
+                                    <select id="edit-anime-status-${anime.id}">
+                                        <option value="planned" ${anime.status === 'planned' ? 'selected' : ''}>📅 Запланировано</option>
+                                        <option value="watching" ${anime.status === 'watching' ? 'selected' : ''}>👀 Смотрю</option>
+                                        <option value="completed" ${anime.status === 'completed' ? 'selected' : ''}>✅ Просмотрено</option>
+                                        <option value="dropped" ${anime.status === 'dropped' ? 'selected' : ''}>❌ Брошено</option>
+                                    </select>
+                                </div>
+                                <div class="input-group">
+                                    <label>Эпизоды</label>
+                                    <input type="number" id="edit-anime-episodes-${anime.id}" value="${anime.episodes || 0}">
+                                </div>
+                                <div class="input-group">
+                                    <label>Теги (через запятую)</label>
+                                    <input type="text" id="edit-anime-tags-${anime.id}" value="${anime.tags ? anime.tags.join(', ') : ''}" placeholder="например: комедия, приключения">
+                                    <div class="tags-container" id="edit-anime-tags-preview-${anime.id}">
+                                        ${anime.tags ? renderTags(anime.tags) : ''}
+                                    </div>
+                                </div>
+                                <div class="rating-section">
+                                    <label>Рейтинг</label>
+                                    <div class="rating-stars" id="edit-anime-rating-${anime.id}">
+                                        <span class="star" data-rating="1">☆</span>
+                                        <span class="star" data-rating="2">☆</span>
+                                        <span class="star" data-rating="3">☆</span>
+                                        <span class="star" data-rating="4">☆</span>
+                                        <span class="star" data-rating="5">☆</span>
+                                    </div>
+                                </div>
+                                <button class="btn" onclick="saveAnimeEdit('${anime.id}')">💾 Сохранить</button>
+                                <button class="btn btn-cancel" onclick="cancelEdit('${anime.id}', 'anime')">❌ Отмена</button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            `).join('');
-
+                `).join('');
+            }
+            
             // Инициализация рейтингов для редактирования
             data.anime.forEach(anime => {
                 initializeEditRating('anime', anime.id, anime.rating || 0);
             });
+            
+            // Обновляем теги фильтра
+            updateFilterTags('anime', data.anime);
         }
         
         // Загрузка манги
@@ -870,78 +1160,167 @@
             
             if (!data.manga || data.manga.length === 0) {
                 container.innerHTML = '<div class="loading">📖 Список манги пуст</div>';
+                updateFilterTags('manga', data.manga || []);
                 return;
             }
             
-            container.innerHTML = data.manga.map(manga => `
-                <div class="item" id="manga-${manga.id}">
-                    ${manga.cover ? 
-                        `<img src="${manga.cover}" class="item-cover" alt="${manga.title}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"> 
-                         <div class="no-cover" style="display: none;">Нет обложки</div>` :
-                        `<div class="no-cover">Нет обложки</div>`
-                    }
-                    <div class="item-content">
-                        <div class="item-header">
-                            <div style="flex: 1;">
-                                <div class="item-title">${manga.title}</div>
-                                <div class="item-status">${getStatusText(manga.status)}</div>
-                            </div>
-                            <div class="item-actions">
-                                <button class="btn btn-edit" onclick="editManga('${manga.id}')">✏️</button>
-                                <button class="btn btn-delete" onclick="deleteManga('${manga.id}')">🗑️</button>
-                            </div>
-                        </div>
-                        ${renderRatingStars(manga.rating)}
-                        <div class="item-details">
-                            <div>Главы: ${manga.chapters || 0}</div>
-                            <div>Добавлено: ${formatDate(manga.added_date)}</div>
-                        </div>
-                        <div class="edit-form" id="edit-manga-${manga.id}">
-                            <h4>✏️ Редактировать мангу</h4>
-                            <div class="input-group">
-                                <label>Название</label>
-                                <input type="text" id="edit-manga-title-${manga.id}" value="${manga.title}">
-                            </div>
-                            <div class="input-group">
-                                <label>Обложка (URL)</label>
-                                <input type="text" id="edit-manga-cover-${manga.id}" value="${manga.cover || ''}" onchange="previewEditCover('manga', '${manga.id}')">
-                                <small style="color: #888; font-size: 12px;">Вставьте ссылку на изображение обложки</small>
-                                <img id="edit-manga-cover-preview-${manga.id}" class="cover-preview" alt="Предпросмотр обложки" style="${manga.cover ? 'display: block;' : 'display: none;'}" src="${manga.cover || ''}">
-                            </div>
-                            <div class="input-group">
-                                <label>Статус</label>
-                                <select id="edit-manga-status-${manga.id}">
-                                    <option value="planned" ${manga.status === 'planned' ? 'selected' : ''}>📅 Запланировано</option>
-                                    <option value="reading" ${manga.status === 'reading' ? 'selected' : ''}>👀 Читаю</option>
-                                    <option value="completed" ${manga.status === 'completed' ? 'selected' : ''}>✅ Прочитано</option>
-                                    <option value="dropped" ${manga.status === 'dropped' ? 'selected' : ''}>❌ Брошено</option>
-                                </select>
-                            </div>
-                            <div class="input-group">
-                                <label>Главы</label>
-                                <input type="number" id="edit-manga-chapters-${manga.id}" value="${manga.chapters || 0}">
-                            </div>
-                            <div class="rating-section">
-                                <label>Рейтинг</label>
-                                <div class="rating-stars" id="edit-manga-rating-${manga.id}">
-                                    <span class="star" data-rating="1">☆</span>
-                                    <span class="star" data-rating="2">☆</span>
-                                    <span class="star" data-rating="3">☆</span>
-                                    <span class="star" data-rating="4">☆</span>
-                                    <span class="star" data-rating="5">☆</span>
+            // Фильтрация по тегам
+            let filteredManga = data.manga;
+            if (activeFilterTags.manga.length > 0) {
+                filteredManga = data.manga.filter(manga => 
+                    activeFilterTags.manga.every(tag => 
+                        manga.tags && manga.tags.includes(tag)
+                    )
+                );
+            }
+            
+            if (filteredManga.length === 0) {
+                container.innerHTML = '<div class="loading">🔍 Ничего не найдено по выбранным тегам</div>';
+            } else {
+                container.innerHTML = filteredManga.map(manga => `
+                    <div class="item" id="manga-${manga.id}">
+                        ${manga.cover ? 
+                            `<img src="${manga.cover}" class="item-cover" alt="${manga.title}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"> 
+                             <div class="no-cover" style="display: none;">Нет обложки</div>` :
+                            `<div class="no-cover">Нет обложки</div>`
+                        }
+                        <div class="item-content">
+                            <div class="item-header">
+                                <div style="flex: 1;">
+                                    <div class="item-title">${manga.title}</div>
+                                    <div class="item-status">${getStatusText(manga.status)}</div>
+                                </div>
+                                <div class="item-actions">
+                                    <button class="btn btn-edit" onclick="editManga('${manga.id}')">✏️</button>
+                                    <button class="btn btn-delete" onclick="deleteManga('${manga.id}')">🗑️</button>
                                 </div>
                             </div>
-                            <button class="btn" onclick="saveMangaEdit('${manga.id}')">💾 Сохранить</button>
-                            <button class="btn btn-cancel" onclick="cancelEdit('${manga.id}', 'manga')">❌ Отмена</button>
+                            ${manga.tags && manga.tags.length > 0 ? `
+                                <div class="tags-container">
+                                    ${renderTags(manga.tags)}
+                                </div>
+                            ` : ''}
+                            ${renderRatingStars(manga.rating)}
+                            <div class="item-details">
+                                <div>Главы: ${manga.chapters || 0}</div>
+                                <div>Добавлено: ${formatDate(manga.added_date)}</div>
+                            </div>
+                            <div class="edit-form" id="edit-manga-${manga.id}">
+                                <h4>✏️ Редактировать мангу</h4>
+                                <div class="input-group">
+                                    <label>Название</label>
+                                    <input type="text" id="edit-manga-title-${manga.id}" value="${manga.title}">
+                                </div>
+                                <div class="input-group">
+                                    <label>Обложка (URL)</label>
+                                    <input type="text" id="edit-manga-cover-${manga.id}" value="${manga.cover || ''}" onchange="previewEditCover('manga', '${manga.id}')">
+                                    <small style="color: #888; font-size: 12px;">Вставьте ссылку на изображение обложки</small>
+                                    <img id="edit-manga-cover-preview-${manga.id}" class="cover-preview" alt="Предпросмотр обложки" style="${manga.cover ? 'display: block;' : 'display: none;'}" src="${manga.cover || ''}">
+                                </div>
+                                <div class="input-group">
+                                    <label>Статус</label>
+                                    <select id="edit-manga-status-${manga.id}">
+                                        <option value="planned" ${manga.status === 'planned' ? 'selected' : ''}>📅 Запланировано</option>
+                                        <option value="reading" ${manga.status === 'reading' ? 'selected' : ''}>👀 Читаю</option>
+                                        <option value="completed" ${manga.status === 'completed' ? 'selected' : ''}>✅ Прочитано</option>
+                                        <option value="dropped" ${manga.status === 'dropped' ? 'selected' : ''}>❌ Брошено</option>
+                                    </select>
+                                </div>
+                                <div class="input-group">
+                                    <label>Главы</label>
+                                    <input type="number" id="edit-manga-chapters-${manga.id}" value="${manga.chapters || 0}">
+                                </div>
+                                <div class="input-group">
+                                    <label>Теги (через запятую)</label>
+                                    <input type="text" id="edit-manga-tags-${manga.id}" value="${manga.tags ? manga.tags.join(', ') : ''}" placeholder="например: комедия, приключения">
+                                    <div class="tags-container" id="edit-manga-tags-preview-${manga.id}">
+                                        ${manga.tags ? renderTags(manga.tags) : ''}
+                                    </div>
+                                </div>
+                                <div class="rating-section">
+                                    <label>Рейтинг</label>
+                                    <div class="rating-stars" id="edit-manga-rating-${manga.id}">
+                                        <span class="star" data-rating="1">☆</span>
+                                        <span class="star" data-rating="2">☆</span>
+                                        <span class="star" data-rating="3">☆</span>
+                                        <span class="star" data-rating="4">☆</span>
+                                        <span class="star" data-rating="5">☆</span>
+                                    </div>
+                                </div>
+                                <button class="btn" onclick="saveMangaEdit('${manga.id}')">💾 Сохранить</button>
+                                <button class="btn btn-cancel" onclick="cancelEdit('${manga.id}', 'manga')">❌ Отмена</button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            `).join('');
-
+                `).join('');
+            }
+            
             // Инициализация рейтингов для редактирования
             data.manga.forEach(manga => {
                 initializeEditRating('manga', manga.id, manga.rating || 0);
             });
+            
+            // Обновляем теги фильтра
+            updateFilterTags('manga', data.manga);
+        }
+        
+        // Обновление тегов фильтра
+        function updateFilterTags(type, items) {
+            const filterContainer = document.getElementById(`${type}FilterTags`);
+            const allTags = new Set();
+            
+            // Собираем все уникальные теги
+            items.forEach(item => {
+                if (item.tags) {
+                    item.tags.forEach(tag => allTags.add(tag));
+                }
+            });
+            
+            const tagsArray = Array.from(allTags).sort();
+            
+            if (tagsArray.length === 0) {
+                filterContainer.innerHTML = '<div style="color: #888; font-size: 12px;">Добавьте теги к записям для фильтрации</div>';
+                return;
+            }
+            
+            filterContainer.innerHTML = `
+                <div class="filter-tag ${activeFilterTags[type].length === 0 ? 'active' : ''}" 
+                     onclick="clearFilterTags('${type}')">
+                    Все
+                </div>
+                ${tagsArray.map(tag => `
+                    <div class="filter-tag ${activeFilterTags[type].includes(tag) ? 'active' : ''}" 
+                         onclick="toggleFilterTag('${type}', '${tag}')">
+                        ${tag}
+                    </div>
+                `).join('')}
+            `;
+        }
+        
+        // Переключение тега фильтра
+        function toggleFilterTag(type, tag) {
+            const index = activeFilterTags[type].indexOf(tag);
+            if (index === -1) {
+                activeFilterTags[type].push(tag);
+            } else {
+                activeFilterTags[type].splice(index, 1);
+            }
+            
+            if (type === 'anime') {
+                loadAnime();
+            } else {
+                loadManga();
+            }
+        }
+        
+        // Очистка фильтра тегов
+        function clearFilterTags(type) {
+            activeFilterTags[type] = [];
+            if (type === 'anime') {
+                loadAnime();
+            } else {
+                loadManga();
+            }
         }
         
         // Инициализация рейтинга для редактирования
@@ -968,6 +1347,15 @@
 
             // Сохраняем рейтинг для использования при сохранении
             window[`edit${type.charAt(0).toUpperCase() + type.slice(1)}Rating_${id}`] = editRating;
+            
+            // Инициализация тегов при редактировании
+            const tagsInput = document.getElementById(`edit-${type}-tags-${id}`);
+            const tagsPreview = document.getElementById(`edit-${type}-tags-preview-${id}`);
+            
+            tagsInput.addEventListener('input', function() {
+                const tags = parseTags(this.value);
+                tagsPreview.innerHTML = renderTags(tags);
+            });
         }
 
         // Получить рейтинг редактирования
@@ -1003,9 +1391,19 @@
                 return;
             }
             
-            const filteredAnime = data.anime.filter(anime => 
-                anime.title.toLowerCase().includes(searchTerm)
+            let filteredAnime = data.anime.filter(anime => 
+                anime.title.toLowerCase().includes(searchTerm) ||
+                (anime.tags && anime.tags.some(tag => tag.toLowerCase().includes(searchTerm)))
             );
+            
+            // Применяем фильтр по тегам
+            if (activeFilterTags.anime.length > 0) {
+                filteredAnime = filteredAnime.filter(anime => 
+                    activeFilterTags.anime.every(tag => 
+                        anime.tags && anime.tags.includes(tag)
+                    )
+                );
+            }
             
             const container = document.getElementById('animeList');
             
@@ -1032,6 +1430,11 @@
                                 <button class="btn btn-delete" onclick="deleteAnime('${anime.id}')">🗑️</button>
                             </div>
                         </div>
+                        ${anime.tags && anime.tags.length > 0 ? `
+                            <div class="tags-container">
+                                ${renderTags(anime.tags)}
+                            </div>
+                        ` : ''}
                         ${renderRatingStars(anime.rating)}
                         <div class="item-details">
                             <div>Эпизоды: ${anime.episodes || 0}</div>
@@ -1052,9 +1455,19 @@
                 return;
             }
             
-            const filteredManga = data.manga.filter(manga => 
-                manga.title.toLowerCase().includes(searchTerm)
+            let filteredManga = data.manga.filter(manga => 
+                manga.title.toLowerCase().includes(searchTerm) ||
+                (manga.tags && manga.tags.some(tag => tag.toLowerCase().includes(searchTerm)))
             );
+            
+            // Применяем фильтр по тегам
+            if (activeFilterTags.manga.length > 0) {
+                filteredManga = filteredManga.filter(manga => 
+                    activeFilterTags.manga.every(tag => 
+                        manga.tags && manga.tags.includes(tag)
+                    )
+                );
+            }
             
             const container = document.getElementById('mangaList');
             
@@ -1081,6 +1494,11 @@
                                 <button class="btn btn-delete" onclick="deleteManga('${manga.id}')">🗑️</button>
                             </div>
                         </div>
+                        ${manga.tags && manga.tags.length > 0 ? `
+                            <div class="tags-container">
+                                ${renderTags(manga.tags)}
+                            </div>
+                        ` : ''}
                         ${renderRatingStars(manga.rating)}
                         <div class="item-details">
                             <div>Главы: ${manga.chapters || 0}</div>
@@ -1115,7 +1533,8 @@
                 dropped: data.anime ? data.anime.filter(a => a.status === 'dropped').length : 0,
                 rated: data.anime ? data.anime.filter(a => a.rating && a.rating > 0).length : 0,
                 averageRating: 0,
-                ratingDistribution: [0, 0, 0, 0, 0] // Для рейтингов 1-5
+                ratingDistribution: [0, 0, 0, 0, 0], // Для рейтингов 1-5
+                tagStats: {}
             };
 
             // Статистика по манге
@@ -1127,7 +1546,8 @@
                 dropped: data.manga ? data.manga.filter(m => m.status === 'dropped').length : 0,
                 rated: data.manga ? data.manga.filter(m => m.rating && m.rating > 0).length : 0,
                 averageRating: 0,
-                ratingDistribution: [0, 0, 0, 0, 0] // Для рейтингов 1-5
+                ratingDistribution: [0, 0, 0, 0, 0], // Для рейтингов 1-5
+                tagStats: {}
             };
 
             // Расчет средних рейтингов и распределения
@@ -1156,6 +1576,32 @@
                     }
                 });
             }
+            
+            // Статистика по тегам
+            data.anime.forEach(anime => {
+                if (anime.tags) {
+                    anime.tags.forEach(tag => {
+                        animeStats.tagStats[tag] = (animeStats.tagStats[tag] || 0) + 1;
+                    });
+                }
+            });
+            
+            data.manga.forEach(manga => {
+                if (manga.tags) {
+                    manga.tags.forEach(tag => {
+                        mangaStats.tagStats[tag] = (mangaStats.tagStats[tag] || 0) + 1;
+                    });
+                }
+            });
+            
+            // Сортируем теги по популярности
+            const sortedAnimeTags = Object.entries(animeStats.tagStats)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 10);
+                
+            const sortedMangaTags = Object.entries(mangaStats.tagStats)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 10);
 
             // Создаем HTML для статистики
             document.getElementById('statsContent').innerHTML = `
@@ -1265,6 +1711,36 @@
                             </div>
                         </div>
                     </div>
+                    
+                    ${sortedAnimeTags.length > 0 || sortedMangaTags.length > 0 ? `
+                    <div class="chart-row">
+                        ${sortedAnimeTags.length > 0 ? `
+                        <div class="chart-card">
+                            <h4>🏷️ Популярные теги аниме</h4>
+                            <div class="tags-container" style="justify-content: center;">
+                                ${sortedAnimeTags.map(([tag, count]) => `
+                                    <span class="tag" style="margin: 2px;">
+                                        ${tag} (${count})
+                                    </span>
+                                `).join('')}
+                            </div>
+                        </div>
+                        ` : ''}
+                        
+                        ${sortedMangaTags.length > 0 ? `
+                        <div class="chart-card">
+                            <h4>🏷️ Популярные теги манги</h4>
+                            <div class="tags-container" style="justify-content: center;">
+                                ${sortedMangaTags.map(([tag, count]) => `
+                                    <span class="tag" style="margin: 2px;">
+                                        ${tag} (${count})
+                                    </span>
+                                `).join('')}
+                            </div>
+                        </div>
+                        ` : ''}
+                    </div>
+                    ` : ''}
                 </div>
             `;
 
@@ -1367,6 +1843,7 @@
             const cover = document.getElementById('animeCover').value.trim();
             const status = document.getElementById('animeStatus').value;
             const episodes = document.getElementById('animeEpisodes').value;
+            const tags = parseTags(document.getElementById('animeTags').value);
             
             if (!title) {
                 alert('Введите название аниме');
@@ -1383,6 +1860,7 @@
                 status: status,
                 episodes: parseInt(episodes) || 0,
                 rating: currentAnimeRating,
+                tags: tags,
                 added_date: new Date().toISOString()
             });
             
@@ -1390,7 +1868,9 @@
                 document.getElementById('animeTitle').value = '';
                 document.getElementById('animeCover').value = '';
                 document.getElementById('animeEpisodes').value = '';
+                document.getElementById('animeTags').value = '';
                 document.getElementById('animeCoverPreview').style.display = 'none';
+                document.getElementById('animeTagsPreview').innerHTML = '';
                 resetRating('anime');
                 loadAnime();
                 loadStats();
@@ -1406,6 +1886,7 @@
             const cover = document.getElementById('mangaCover').value.trim();
             const status = document.getElementById('mangaStatus').value;
             const chapters = document.getElementById('mangaChapters').value;
+            const tags = parseTags(document.getElementById('mangaTags').value);
             
             if (!title) {
                 alert('Введите название манги');
@@ -1422,6 +1903,7 @@
                 status: status,
                 chapters: parseInt(chapters) || 0,
                 rating: currentMangaRating,
+                tags: tags,
                 added_date: new Date().toISOString()
             });
             
@@ -1429,7 +1911,9 @@
                 document.getElementById('mangaTitle').value = '';
                 document.getElementById('mangaCover').value = '';
                 document.getElementById('mangaChapters').value = '';
+                document.getElementById('mangaTags').value = '';
                 document.getElementById('mangaCoverPreview').style.display = 'none';
+                document.getElementById('mangaTagsPreview').innerHTML = '';
                 resetRating('manga');
                 loadManga();
                 loadStats();
@@ -1477,6 +1961,7 @@
             const cover = document.getElementById(`edit-anime-cover-${id}`).value.trim();
             const status = document.getElementById(`edit-anime-status-${id}`).value;
             const episodes = document.getElementById(`edit-anime-episodes-${id}`).value;
+            const tags = parseTags(document.getElementById(`edit-anime-tags-${id}`).value);
             
             // ПОЛУЧАЕМ АКТУАЛЬНЫЙ РЕЙТИНГ ИЗ РЕДАКТИРУЕМЫХ ЗВЕЗД
             const ratingContainer = document.getElementById(`edit-anime-rating-${id}`);
@@ -1499,6 +1984,7 @@
                     status: status,
                     episodes: parseInt(episodes) || 0,
                     rating: rating, // ОБНОВЛЯЕМ РЕЙТИНГ
+                    tags: tags, // ОБНОВЛЯЕМ ТЕГИ
                     last_updated: new Date().toISOString()
                 };
                 
@@ -1519,6 +2005,7 @@
             const cover = document.getElementById(`edit-manga-cover-${id}`).value.trim();
             const status = document.getElementById(`edit-manga-status-${id}`).value;
             const chapters = document.getElementById(`edit-manga-chapters-${id}`).value;
+            const tags = parseTags(document.getElementById(`edit-manga-tags-${id}`).value);
             
             // ПОЛУЧАЕМ АКТУАЛЬНЫЙ РЕЙТИНГ ИЗ РЕДАКТИРУЕМЫХ ЗВЕЗД
             const ratingContainer = document.getElementById(`edit-manga-rating-${id}`);
@@ -1541,6 +2028,7 @@
                     status: status,
                     chapters: parseInt(chapters) || 0,
                     rating: rating, // ОБНОВЛЯЕМ РЕЙТИНГ
+                    tags: tags, // ОБНОВЛЯЕМ ТЕГИ
                     last_updated: new Date().toISOString()
                 };
                 
@@ -1631,6 +2119,7 @@
         // Инициализация при загрузке
         document.addEventListener('DOMContentLoaded', function() {
             initializeRatingSystem();
+            initializeTagsSystem();
             loadAnime();
             loadManga();
         });
