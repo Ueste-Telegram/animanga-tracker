@@ -643,6 +643,135 @@
             font-size: 12px;
             margin-top: 5px;
         }
+
+        /* Новые стили для системы прогресса */
+        .progress-section {
+            margin: 15px 0;
+        }
+
+        .progress-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .progress-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .progress-btn:hover {
+            background: rgba(102, 126, 234, 0.3);
+            transform: scale(1.1);
+        }
+
+        .progress-btn:active {
+            transform: scale(0.95);
+        }
+
+        .progress-input {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: white;
+            padding: 6px 10px;
+            text-align: center;
+            width: 60px;
+            font-size: 14px;
+        }
+
+        .progress-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .progress-text {
+            font-size: 14px;
+            color: #b0b0b0;
+            margin-left: 5px;
+        }
+
+        .progress-completion {
+            font-size: 12px;
+            color: #4CAF50;
+            margin-top: 5px;
+            font-weight: 500;
+        }
+
+        .item-progress {
+            margin: 8px 0;
+        }
+
+        .quick-progress {
+            display: flex;
+            gap: 5px;
+            margin-top: 8px;
+        }
+
+        .quick-progress-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            color: #b0b0b0;
+            padding: 4px 8px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .quick-progress-btn:hover {
+            background: rgba(102, 126, 234, 0.2);
+            color: white;
+        }
+
+        .progress-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .progress-stat {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 12px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .progress-stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .progress-stat-label {
+            font-size: 11px;
+            color: #b0b0b0;
+            text-transform: uppercase;
+        }
+
+        .completion-badge {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: 600;
+            margin-left: 8px;
+        }
     </style>
 </head>
 <body>
@@ -683,8 +812,12 @@
                         </select>
                     </div>
                     <div class="input-group">
-                        <label>Эпизоды</label>
-                        <input type="number" id="animeEpisodes" placeholder="Количество эпизодов">
+                        <label>Всего эпизодов</label>
+                        <input type="number" id="animeEpisodes" placeholder="Количество эпизодов" value="12">
+                    </div>
+                    <div class="input-group">
+                        <label>Просмотрено эпизодов</label>
+                        <input type="number" id="animeProgress" placeholder="Просмотрено эпизодов" value="0" min="0">
                     </div>
                     <div class="input-group">
                         <label>Теги (через запятую)</label>
@@ -743,8 +876,12 @@
                         </select>
                     </div>
                     <div class="input-group">
-                        <label>Главы</label>
-                        <input type="number" id="mangaChapters" placeholder="Количество глав">
+                        <label>Всего глав</label>
+                        <input type="number" id="mangaChapters" placeholder="Количество глав" value="50">
+                    </div>
+                    <div class="input-group">
+                        <label>Прочитано глав</label>
+                        <input type="number" id="mangaProgress" placeholder="Прочитано глав" value="0" min="0">
                     </div>
                     <div class="input-group">
                         <label>Теги (через запятую)</label>
@@ -950,6 +1087,138 @@
             `).join('');
         }
         
+        // Отображение прогресс-бара
+        function renderProgressBar(current, total, type) {
+            if (!total || total === 0) return '';
+            
+            const percentage = Math.min(100, Math.round((current / total) * 100));
+            const isCompleted = current >= total;
+            
+            return `
+                <div class="item-progress">
+                    <div class="progress-label">
+                        <span>${type === 'anime' ? 'Эпизоды' : 'Главы'}: ${current} / ${total}</span>
+                        <span>${percentage}%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${percentage}%; background: ${isCompleted ? 'linear-gradient(135deg, #4CAF50, #45a049)' : 'linear-gradient(135deg, #667eea, #764ba2)'};"></div>
+                    </div>
+                    ${isCompleted ? '<div class="progress-completion">✅ Завершено!</div>' : ''}
+                </div>
+            `;
+        }
+        
+        // Отображение контролов прогресса
+        function renderProgressControls(id, type, current, total) {
+            const isAnime = type === 'anime';
+            const unit = isAnime ? 'эп.' : 'гл.';
+            
+            return `
+                <div class="progress-controls">
+                    <button class="progress-btn" onclick="updateProgress('${id}', '${type}', -1)">-</button>
+                    <input type="number" class="progress-input" value="${current}" min="0" max="${total}" 
+                           onchange="setProgress('${id}', '${type}', this.value)" 
+                           onblur="validateProgress('${id}', '${type}', this)">
+                    <span class="progress-text">/ ${total} ${unit}</span>
+                    <button class="progress-btn" onclick="updateProgress('${id}', '${type}', 1)">+</button>
+                </div>
+                <div class="quick-progress">
+                    <button class="quick-progress-btn" onclick="updateProgress('${id}', '${type}', 5)">+5</button>
+                    <button class="quick-progress-btn" onclick="updateProgress('${id}', '${type}', 10)">+10</button>
+                    <button class="quick-progress-btn" onclick="setProgress('${id}', '${type}', ${total})">Завершить</button>
+                </div>
+            `;
+        }
+        
+        // Обновление прогресса
+        function updateProgress(id, type, change) {
+            const data = loadData();
+            const items = type === 'anime' ? data.anime : data.manga;
+            const itemIndex = items.findIndex(item => item.id === id);
+            
+            if (itemIndex !== -1) {
+                const item = items[itemIndex];
+                const total = type === 'anime' ? item.episodes : item.chapters;
+                let newProgress = (item.progress || 0) + change;
+                
+                // Ограничиваем прогресс между 0 и общим количеством
+                newProgress = Math.max(0, Math.min(total, newProgress));
+                
+                items[itemIndex].progress = newProgress;
+                
+                // Автоматически обновляем статус при завершении
+                if (newProgress >= total && item.status !== 'completed') {
+                    items[itemIndex].status = 'completed';
+                    showNotification(`🎉 Поздравляем! Вы завершили "${item.title}"!`);
+                } else if (newProgress > 0 && newProgress < total && item.status === 'planned') {
+                    items[itemIndex].status = type === 'anime' ? 'watching' : 'reading';
+                }
+                
+                if (saveData(data)) {
+                    if (type === 'anime') {
+                        loadAnime();
+                    } else {
+                        loadManga();
+                    }
+                    loadStats();
+                }
+            }
+        }
+        
+        // Установка конкретного значения прогресса
+        function setProgress(id, type, value) {
+            const data = loadData();
+            const items = type === 'anime' ? data.anime : data.manga;
+            const itemIndex = items.findIndex(item => item.id === id);
+            
+            if (itemIndex !== -1) {
+                const item = items[itemIndex];
+                const total = type === 'anime' ? item.episodes : item.chapters;
+                let newProgress = parseInt(value) || 0;
+                
+                // Ограничиваем прогресс между 0 и общим количеством
+                newProgress = Math.max(0, Math.min(total, newProgress));
+                
+                items[itemIndex].progress = newProgress;
+                
+                // Автоматически обновляем статус при завершении
+                if (newProgress >= total && item.status !== 'completed') {
+                    items[itemIndex].status = 'completed';
+                    showNotification(`🎉 Поздравляем! Вы завершили "${item.title}"!`);
+                } else if (newProgress > 0 && newProgress < total && item.status === 'planned') {
+                    items[itemIndex].status = type === 'anime' ? 'watching' : 'reading';
+                }
+                
+                if (saveData(data)) {
+                    if (type === 'anime') {
+                        loadAnime();
+                    } else {
+                        loadManga();
+                    }
+                    loadStats();
+                }
+            }
+        }
+        
+        // Валидация прогресса
+        function validateProgress(id, type, input) {
+            const data = loadData();
+            const items = type === 'anime' ? data.anime : data.manga;
+            const itemIndex = items.findIndex(item => item.id === id);
+            
+            if (itemIndex !== -1) {
+                const item = items[itemIndex];
+                const total = type === 'anime' ? item.episodes : item.chapters;
+                let value = parseInt(input.value) || 0;
+                
+                if (value < 0) value = 0;
+                if (value > total) value = total;
+                
+                input.value = value;
+                setProgress(id, type, value);
+            }
+        }
+        
         // Инициализация системы тегов
         function initializeTagsSystem() {
             // Для аниме
@@ -1066,7 +1335,12 @@
             if (filteredAnime.length === 0) {
                 container.innerHTML = '<div class="loading">🔍 Ничего не найдено по выбранным тегам</div>';
             } else {
-                container.innerHTML = filteredAnime.map(anime => `
+                container.innerHTML = filteredAnime.map(anime => {
+                    const progress = anime.progress || 0;
+                    const episodes = anime.episodes || 0;
+                    const isCompleted = progress >= episodes && episodes > 0;
+                    
+                    return `
                     <div class="item" id="anime-${anime.id}">
                         ${anime.cover ? 
                             `<img src="${anime.cover}" class="item-cover" alt="${anime.title}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"> 
@@ -1076,7 +1350,7 @@
                         <div class="item-content">
                             <div class="item-header">
                                 <div style="flex: 1;">
-                                    <div class="item-title">${anime.title}</div>
+                                    <div class="item-title">${anime.title} ${isCompleted ? '<span class="completion-badge">Завершено</span>' : ''}</div>
                                     <div class="item-status">${getStatusText(anime.status)}</div>
                                 </div>
                                 <div class="item-actions">
@@ -1089,10 +1363,12 @@
                                     ${renderTags(anime.tags)}
                                 </div>
                             ` : ''}
+                            ${episodes > 0 ? renderProgressBar(progress, episodes, 'anime') : ''}
+                            ${renderProgressControls(anime.id, 'anime', progress, episodes)}
                             ${renderRatingStars(anime.rating)}
                             <div class="item-details">
-                                <div>Эпизоды: ${anime.episodes || 0}</div>
                                 <div>Добавлено: ${formatDate(anime.added_date)}</div>
+                                ${anime.last_updated ? `<div>Обновлено: ${formatDate(anime.last_updated)}</div>` : ''}
                             </div>
                             <div class="edit-form" id="edit-anime-${anime.id}">
                                 <h4>✏️ Редактировать аниме</h4>
@@ -1116,8 +1392,12 @@
                                     </select>
                                 </div>
                                 <div class="input-group">
-                                    <label>Эпизоды</label>
+                                    <label>Всего эпизодов</label>
                                     <input type="number" id="edit-anime-episodes-${anime.id}" value="${anime.episodes || 0}">
+                                </div>
+                                <div class="input-group">
+                                    <label>Просмотрено эпизодов</label>
+                                    <input type="number" id="edit-anime-progress-${anime.id}" value="${anime.progress || 0}" min="0">
                                 </div>
                                 <div class="input-group">
                                     <label>Теги (через запятую)</label>
@@ -1141,7 +1421,8 @@
                             </div>
                         </div>
                     </div>
-                `).join('');
+                    `;
+                }).join('');
             }
             
             // Инициализация рейтингов для редактирования
@@ -1177,7 +1458,12 @@
             if (filteredManga.length === 0) {
                 container.innerHTML = '<div class="loading">🔍 Ничего не найдено по выбранным тегам</div>';
             } else {
-                container.innerHTML = filteredManga.map(manga => `
+                container.innerHTML = filteredManga.map(manga => {
+                    const progress = manga.progress || 0;
+                    const chapters = manga.chapters || 0;
+                    const isCompleted = progress >= chapters && chapters > 0;
+                    
+                    return `
                     <div class="item" id="manga-${manga.id}">
                         ${manga.cover ? 
                             `<img src="${manga.cover}" class="item-cover" alt="${manga.title}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"> 
@@ -1187,7 +1473,7 @@
                         <div class="item-content">
                             <div class="item-header">
                                 <div style="flex: 1;">
-                                    <div class="item-title">${manga.title}</div>
+                                    <div class="item-title">${manga.title} ${isCompleted ? '<span class="completion-badge">Завершено</span>' : ''}</div>
                                     <div class="item-status">${getStatusText(manga.status)}</div>
                                 </div>
                                 <div class="item-actions">
@@ -1200,10 +1486,12 @@
                                     ${renderTags(manga.tags)}
                                 </div>
                             ` : ''}
+                            ${chapters > 0 ? renderProgressBar(progress, chapters, 'manga') : ''}
+                            ${renderProgressControls(manga.id, 'manga', progress, chapters)}
                             ${renderRatingStars(manga.rating)}
                             <div class="item-details">
-                                <div>Главы: ${manga.chapters || 0}</div>
                                 <div>Добавлено: ${formatDate(manga.added_date)}</div>
+                                ${manga.last_updated ? `<div>Обновлено: ${formatDate(manga.last_updated)}</div>` : ''}
                             </div>
                             <div class="edit-form" id="edit-manga-${manga.id}">
                                 <h4>✏️ Редактировать мангу</h4>
@@ -1227,8 +1515,12 @@
                                     </select>
                                 </div>
                                 <div class="input-group">
-                                    <label>Главы</label>
+                                    <label>Всего глав</label>
                                     <input type="number" id="edit-manga-chapters-${manga.id}" value="${manga.chapters || 0}">
+                                </div>
+                                <div class="input-group">
+                                    <label>Прочитано глав</label>
+                                    <input type="number" id="edit-manga-progress-${manga.id}" value="${manga.progress || 0}" min="0">
                                 </div>
                                 <div class="input-group">
                                     <label>Теги (через запятую)</label>
@@ -1252,7 +1544,8 @@
                             </div>
                         </div>
                     </div>
-                `).join('');
+                    `;
+                }).join('');
             }
             
             // Инициализация рейтингов для редактирования
@@ -1412,7 +1705,12 @@
                 return;
             }
             
-            container.innerHTML = filteredAnime.map(anime => `
+            container.innerHTML = filteredAnime.map(anime => {
+                const progress = anime.progress || 0;
+                const episodes = anime.episodes || 0;
+                const isCompleted = progress >= episodes && episodes > 0;
+                
+                return `
                 <div class="item" id="anime-${anime.id}">
                     ${anime.cover ? 
                         `<img src="${anime.cover}" class="item-cover" alt="${anime.title}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"> 
@@ -1422,7 +1720,7 @@
                     <div class="item-content">
                         <div class="item-header">
                             <div style="flex: 1;">
-                                <div class="item-title">${anime.title}</div>
+                                <div class="item-title">${anime.title} ${isCompleted ? '<span class="completion-badge">Завершено</span>' : ''}</div>
                                 <div class="item-status">${getStatusText(anime.status)}</div>
                             </div>
                             <div class="item-actions">
@@ -1435,14 +1733,17 @@
                                 ${renderTags(anime.tags)}
                             </div>
                         ` : ''}
+                        ${episodes > 0 ? renderProgressBar(progress, episodes, 'anime') : ''}
+                        ${renderProgressControls(anime.id, 'anime', progress, episodes)}
                         ${renderRatingStars(anime.rating)}
                         <div class="item-details">
-                            <div>Эпизоды: ${anime.episodes || 0}</div>
                             <div>Добавлено: ${formatDate(anime.added_date)}</div>
+                            ${anime.last_updated ? `<div>Обновлено: ${formatDate(anime.last_updated)}</div>` : ''}
                         </div>
                     </div>
                 </div>
-            `).join('');
+                `;
+            }).join('');
         }
         
         // Поиск манги
@@ -1476,7 +1777,12 @@
                 return;
             }
             
-            container.innerHTML = filteredManga.map(manga => `
+            container.innerHTML = filteredManga.map(manga => {
+                const progress = manga.progress || 0;
+                const chapters = manga.chapters || 0;
+                const isCompleted = progress >= chapters && chapters > 0;
+                
+                return `
                 <div class="item" id="manga-${manga.id}">
                     ${manga.cover ? 
                         `<img src="${manga.cover}" class="item-cover" alt="${manga.title}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"> 
@@ -1486,7 +1792,7 @@
                     <div class="item-content">
                         <div class="item-header">
                             <div style="flex: 1;">
-                                <div class="item-title">${manga.title}</div>
+                                <div class="item-title">${manga.title} ${isCompleted ? '<span class="completion-badge">Завершено</span>' : ''}</div>
                                 <div class="item-status">${getStatusText(manga.status)}</div>
                             </div>
                             <div class="item-actions">
@@ -1499,14 +1805,17 @@
                                 ${renderTags(manga.tags)}
                             </div>
                         ` : ''}
+                        ${chapters > 0 ? renderProgressBar(progress, chapters, 'manga') : ''}
+                        ${renderProgressControls(manga.id, 'manga', progress, chapters)}
                         ${renderRatingStars(manga.rating)}
                         <div class="item-details">
-                            <div>Главы: ${manga.chapters || 0}</div>
                             <div>Добавлено: ${formatDate(manga.added_date)}</div>
+                            ${manga.last_updated ? `<div>Обновлено: ${formatDate(manga.last_updated)}</div>` : ''}
                         </div>
                     </div>
                 </div>
-            `).join('');
+                `;
+            }).join('');
         }
         
         // Уничтожение графиков при перезагрузке
@@ -1534,7 +1843,10 @@
                 rated: data.anime ? data.anime.filter(a => a.rating && a.rating > 0).length : 0,
                 averageRating: 0,
                 ratingDistribution: [0, 0, 0, 0, 0], // Для рейтингов 1-5
-                tagStats: {}
+                tagStats: {},
+                totalEpisodes: 0,
+                watchedEpisodes: 0,
+                completionRate: 0
             };
 
             // Статистика по манге
@@ -1547,7 +1859,10 @@
                 rated: data.manga ? data.manga.filter(m => m.rating && m.rating > 0).length : 0,
                 averageRating: 0,
                 ratingDistribution: [0, 0, 0, 0, 0], // Для рейтингов 1-5
-                tagStats: {}
+                tagStats: {},
+                totalChapters: 0,
+                readChapters: 0,
+                completionRate: 0
             };
 
             // Расчет средних рейтингов и распределения
@@ -1584,6 +1899,11 @@
                         animeStats.tagStats[tag] = (animeStats.tagStats[tag] || 0) + 1;
                     });
                 }
+                // Статистика прогресса
+                if (anime.episodes) {
+                    animeStats.totalEpisodes += anime.episodes;
+                    animeStats.watchedEpisodes += anime.progress || 0;
+                }
             });
             
             data.manga.forEach(manga => {
@@ -1592,7 +1912,21 @@
                         mangaStats.tagStats[tag] = (mangaStats.tagStats[tag] || 0) + 1;
                     });
                 }
+                // Статистика прогресса
+                if (manga.chapters) {
+                    mangaStats.totalChapters += manga.chapters;
+                    mangaStats.readChapters += manga.progress || 0;
+                }
             });
+            
+            // Расчет процента завершения
+            if (animeStats.totalEpisodes > 0) {
+                animeStats.completionRate = ((animeStats.watchedEpisodes / animeStats.totalEpisodes) * 100).toFixed(1);
+            }
+            
+            if (mangaStats.totalChapters > 0) {
+                mangaStats.completionRate = ((mangaStats.readChapters / mangaStats.totalChapters) * 100).toFixed(1);
+            }
             
             // Сортируем теги по популярности
             const sortedAnimeTags = Object.entries(animeStats.tagStats)
@@ -1659,6 +1993,50 @@
                             <div>${renderRatingStars(Math.round(mangaStats.averageRating))}</div>
                         </div>
                     ` : ''}
+                </div>
+
+                <div class="stats-section">
+                    <h4>📊 Прогресс просмотра</h4>
+                    <div class="progress-stats">
+                        <div class="progress-stat">
+                            <div class="progress-stat-value">${animeStats.watchedEpisodes}</div>
+                            <div class="progress-stat-label">Просмотрено эпизодов</div>
+                        </div>
+                        <div class="progress-stat">
+                            <div class="progress-stat-value">${animeStats.totalEpisodes}</div>
+                            <div class="progress-stat-label">Всего эпизодов</div>
+                        </div>
+                        <div class="progress-stat">
+                            <div class="progress-stat-value">${animeStats.completionRate}%</div>
+                            <div class="progress-stat-label">Процент завершения</div>
+                        </div>
+                        <div class="progress-stat">
+                            <div class="progress-stat-value">${Math.round(animeStats.watchedEpisodes / Math.max(animeStats.total, 1))}</div>
+                            <div class="progress-stat-label">Среднее на аниме</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stats-section">
+                    <h4>📊 Прогресс чтения</h4>
+                    <div class="progress-stats">
+                        <div class="progress-stat">
+                            <div class="progress-stat-value">${mangaStats.readChapters}</div>
+                            <div class="progress-stat-label">Прочитано глав</div>
+                        </div>
+                        <div class="progress-stat">
+                            <div class="progress-stat-value">${mangaStats.totalChapters}</div>
+                            <div class="progress-stat-label">Всего глав</div>
+                        </div>
+                        <div class="progress-stat">
+                            <div class="progress-stat-value">${mangaStats.completionRate}%</div>
+                            <div class="progress-stat-label">Процент завершения</div>
+                        </div>
+                        <div class="progress-stat">
+                            <div class="progress-stat-value">${Math.round(mangaStats.readChapters / Math.max(mangaStats.total, 1))}</div>
+                            <div class="progress-stat-label">Среднее на мангу</div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="charts-container">
@@ -1843,6 +2221,7 @@
             const cover = document.getElementById('animeCover').value.trim();
             const status = document.getElementById('animeStatus').value;
             const episodes = document.getElementById('animeEpisodes').value;
+            const progress = document.getElementById('animeProgress').value;
             const tags = parseTags(document.getElementById('animeTags').value);
             
             if (!title) {
@@ -1859,6 +2238,7 @@
                 cover: cover || null,
                 status: status,
                 episodes: parseInt(episodes) || 0,
+                progress: parseInt(progress) || 0,
                 rating: currentAnimeRating,
                 tags: tags,
                 added_date: new Date().toISOString()
@@ -1867,7 +2247,8 @@
             if (saveData(data)) {
                 document.getElementById('animeTitle').value = '';
                 document.getElementById('animeCover').value = '';
-                document.getElementById('animeEpisodes').value = '';
+                document.getElementById('animeEpisodes').value = '12';
+                document.getElementById('animeProgress').value = '0';
                 document.getElementById('animeTags').value = '';
                 document.getElementById('animeCoverPreview').style.display = 'none';
                 document.getElementById('animeTagsPreview').innerHTML = '';
@@ -1886,6 +2267,7 @@
             const cover = document.getElementById('mangaCover').value.trim();
             const status = document.getElementById('mangaStatus').value;
             const chapters = document.getElementById('mangaChapters').value;
+            const progress = document.getElementById('mangaProgress').value;
             const tags = parseTags(document.getElementById('mangaTags').value);
             
             if (!title) {
@@ -1902,6 +2284,7 @@
                 cover: cover || null,
                 status: status,
                 chapters: parseInt(chapters) || 0,
+                progress: parseInt(progress) || 0,
                 rating: currentMangaRating,
                 tags: tags,
                 added_date: new Date().toISOString()
@@ -1910,7 +2293,8 @@
             if (saveData(data)) {
                 document.getElementById('mangaTitle').value = '';
                 document.getElementById('mangaCover').value = '';
-                document.getElementById('mangaChapters').value = '';
+                document.getElementById('mangaChapters').value = '50';
+                document.getElementById('mangaProgress').value = '0';
                 document.getElementById('mangaTags').value = '';
                 document.getElementById('mangaCoverPreview').style.display = 'none';
                 document.getElementById('mangaTagsPreview').innerHTML = '';
@@ -1961,6 +2345,7 @@
             const cover = document.getElementById(`edit-anime-cover-${id}`).value.trim();
             const status = document.getElementById(`edit-anime-status-${id}`).value;
             const episodes = document.getElementById(`edit-anime-episodes-${id}`).value;
+            const progress = document.getElementById(`edit-anime-progress-${id}`).value;
             const tags = parseTags(document.getElementById(`edit-anime-tags-${id}`).value);
             
             // ПОЛУЧАЕМ АКТУАЛЬНЫЙ РЕЙТИНГ ИЗ РЕДАКТИРУЕМЫХ ЗВЕЗД
@@ -1983,6 +2368,7 @@
                     cover: cover || null,
                     status: status,
                     episodes: parseInt(episodes) || 0,
+                    progress: parseInt(progress) || 0,
                     rating: rating, // ОБНОВЛЯЕМ РЕЙТИНГ
                     tags: tags, // ОБНОВЛЯЕМ ТЕГИ
                     last_updated: new Date().toISOString()
@@ -2005,6 +2391,7 @@
             const cover = document.getElementById(`edit-manga-cover-${id}`).value.trim();
             const status = document.getElementById(`edit-manga-status-${id}`).value;
             const chapters = document.getElementById(`edit-manga-chapters-${id}`).value;
+            const progress = document.getElementById(`edit-manga-progress-${id}`).value;
             const tags = parseTags(document.getElementById(`edit-manga-tags-${id}`).value);
             
             // ПОЛУЧАЕМ АКТУАЛЬНЫЙ РЕЙТИНГ ИЗ РЕДАКТИРУЕМЫХ ЗВЕЗД
@@ -2027,6 +2414,7 @@
                     cover: cover || null,
                     status: status,
                     chapters: parseInt(chapters) || 0,
+                    progress: parseInt(progress) || 0,
                     rating: rating, // ОБНОВЛЯЕМ РЕЙТИНГ
                     tags: tags, // ОБНОВЛЯЕМ ТЕГИ
                     last_updated: new Date().toISOString()
