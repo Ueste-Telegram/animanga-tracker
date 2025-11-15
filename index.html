@@ -1199,7 +1199,11 @@
             const cover = document.getElementById(`edit-anime-cover-${id}`).value.trim();
             const status = document.getElementById(`edit-anime-status-${id}`).value;
             const episodes = document.getElementById(`edit-anime-episodes-${id}`).value;
-            const rating = getEditRating('anime', id);
+            
+            // ПОЛУЧАЕМ АКТУАЛЬНЫЙ РЕЙТИНГ ИЗ РЕДАКТИРУЕМЫХ ЗВЕЗД
+            const ratingContainer = document.getElementById(`edit-anime-rating-${id}`);
+            const activeStars = ratingContainer.querySelectorAll('.star.active');
+            const rating = activeStars.length;
             
             if (!title) {
                 alert('Введите название аниме');
@@ -1216,7 +1220,7 @@
                     cover: cover || null,
                     status: status,
                     episodes: parseInt(episodes) || 0,
-                    rating: rating,
+                    rating: rating, // ОБНОВЛЯЕМ РЕЙТИНГ
                     last_updated: new Date().toISOString()
                 };
                 
@@ -1237,7 +1241,11 @@
             const cover = document.getElementById(`edit-manga-cover-${id}`).value.trim();
             const status = document.getElementById(`edit-manga-status-${id}`).value;
             const chapters = document.getElementById(`edit-manga-chapters-${id}`).value;
-            const rating = getEditRating('manga', id);
+            
+            // ПОЛУЧАЕМ АКТУАЛЬНЫЙ РЕЙТИНГ ИЗ РЕДАКТИРУЕМЫХ ЗВЕЗД
+            const ratingContainer = document.getElementById(`edit-manga-rating-${id}`);
+            const activeStars = ratingContainer.querySelectorAll('.star.active');
+            const rating = activeStars.length;
             
             if (!title) {
                 alert('Введите название манги');
@@ -1254,7 +1262,7 @@
                     cover: cover || null,
                     status: status,
                     chapters: parseInt(chapters) || 0,
-                    rating: rating,
+                    rating: rating, // ОБНОВЛЯЕМ РЕЙТИНГ
                     last_updated: new Date().toISOString()
                 };
                 
