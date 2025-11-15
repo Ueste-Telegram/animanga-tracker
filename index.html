@@ -6,32 +6,266 @@
     <title>AniManga Tracker</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
-        .container { max-width: 400px; margin: 0 auto; }
-        .header { text-align: center; color: white; margin-bottom: 30px; }
-        .header h1 { font-size: 24px; margin-bottom: 5px; }
-        .tabs { display: flex; background: rgba(255,255,255,0.1); border-radius: 15px; padding: 5px; margin-bottom: 20px; }
-        .tab { flex: 1; padding: 12px; text-align: center; color: white; border: none; background: transparent; border-radius: 12px; cursor: pointer; }
-        .tab.active { background: rgba(255,255,255,0.2); }
-        .content { background: white; border-radius: 20px; padding: 20px; min-height: 400px; }
-        .section { display: none; }
-        .section.active { display: block; }
-        .add-form { margin-bottom: 20px; }
-        .input-group { margin-bottom: 15px; }
-        .input-group label { display: block; margin-bottom: 5px; color: #333; font-weight: 500; }
-        .input-group input, .input-group select { width: 100%; padding: 12px; border: 2px solid #e1e5e9; border-radius: 10px; font-size: 16px; }
-        .btn { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 12px 24px; border-radius: 10px; font-size: 16px; cursor: pointer; width: 100%; }
-        .list { max-height: 300px; overflow-y: auto; }
-        .item { background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 10px; border-left: 4px solid #667eea; }
-        .item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
-        .item-title { font-weight: bold; color: #333; }
-        .item-status { background: #667eea; color: white; padding: 2px 8px; border-radius: 20px; font-size: 12px; }
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
-        .stat-card { background: #f8f9fa; padding: 15px; border-radius: 10px; text-align: center; }
-        .stat-number { font-size: 24px; font-weight: bold; color: #667eea; margin-bottom: 5px; }
-        .stat-label { font-size: 12px; color: #666; text-transform: uppercase; }
-        .loading { text-align: center; color: #666; padding: 20px; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #ffffff;
+        }
+        
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: bold;
+        }
+        
+        .header p {
+            color: #b0b0b0;
+            font-size: 14px;
+        }
+        
+        .tabs {
+            display: flex;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 5px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            color: #cccccc;
+            border: none;
+            background: transparent;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        
+        .tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .content {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            min-height: 400px;
+        }
+        
+        .section {
+            display: none;
+        }
+        
+        .section.active {
+            display: block;
+        }
+        
+        .add-form {
+            margin-bottom: 25px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .add-form h3 {
+            margin-bottom: 15px;
+            color: #667eea;
+            font-size: 18px;
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #cccccc;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            font-size: 16px;
+            background: rgba(255, 255, 255, 0.08);
+            color: white;
+            transition: all 0.3s ease;
+        }
+        
+        .input-group input:focus, .input-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            background: rgba(255, 255, 255, 0.12);
+        }
+        
+        .input-group input::placeholder {
+            color: #888888;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 24px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .list {
+            max-height: 300px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+        
+        .list::-webkit-scrollbar {
+            width: 4px;
+        }
+        
+        .list::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+        
+        .list::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 10px;
+        }
+        
+        .item {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            border-left: 4px solid #667eea;
+            transition: transform 0.2s ease;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .item:hover {
+            transform: translateX(5px);
+            background: rgba(255, 255, 255, 0.12);
+        }
+        
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .item-title {
+            font-weight: 600;
+            color: white;
+            font-size: 16px;
+        }
+        
+        .item-status {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        
+        .item-details {
+            color: #b0b0b0;
+            font-size: 14px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2));
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+        
+        .stat-number {
+            font-size: 28px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #cccccc;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .loading {
+            text-align: center;
+            color: #888888;
+            padding: 30px;
+            font-size: 16px;
+        }
+        
+        h3 {
+            color: #cccccc;
+            margin-bottom: 15px;
+            font-size: 18px;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -42,15 +276,16 @@
         </div>
         
         <div class="tabs">
-            <button class="tab active" onclick="showSection('anime')">Аниме</button>
-            <button class="tab" onclick="showSection('manga')">Манга</button>
-            <button class="tab" onclick="showSection('stats')">Статистика</button>
+            <button class="tab active" onclick="showSection('anime')">🎬 Аниме</button>
+            <button class="tab" onclick="showSection('manga')">📚 Манга</button>
+            <button class="tab" onclick="showSection('stats')">📊 Статистика</button>
         </div>
         
         <div class="content">
+            <!-- Аниме секция -->
             <div id="anime" class="section active">
                 <div class="add-form">
-                    <h3>Добавить аниме</h3>
+                    <h3>➕ Добавить аниме</h3>
                     <div class="input-group">
                         <label>Название</label>
                         <input type="text" id="animeTitle" placeholder="Например: Наруто">
@@ -58,28 +293,29 @@
                     <div class="input-group">
                         <label>Статус</label>
                         <select id="animeStatus">
-                            <option value="planned">Запланировано</option>
-                            <option value="watching">Смотрю</option>
-                            <option value="completed">Просмотрено</option>
-                            <option value="dropped">Брошено</option>
+                            <option value="planned">📅 Запланировано</option>
+                            <option value="watching">👀 Смотрю</option>
+                            <option value="completed">✅ Просмотрено</option>
+                            <option value="dropped">❌ Брошено</option>
                         </select>
                     </div>
                     <div class="input-group">
                         <label>Эпизоды</label>
                         <input type="number" id="animeEpisodes" placeholder="Количество эпизодов">
                     </div>
-                    <button class="btn" onclick="addAnime()">➕ Добавить аниме</button>
+                    <button class="btn" onclick="addAnime()">🎬 Добавить аниме</button>
                 </div>
                 
-                <h3>Мой список аниме</h3>
+                <h3>📺 Мой список аниме</h3>
                 <div id="animeList" class="list">
                     <div class="loading">Загрузка...</div>
                 </div>
             </div>
             
+            <!-- Манга секция -->
             <div id="manga" class="section">
                 <div class="add-form">
-                    <h3>Добавить мангу</h3>
+                    <h3>➕ Добавить мангу</h3>
                     <div class="input-group">
                         <label>Название</label>
                         <input type="text" id="mangaTitle" placeholder="Например: Ван Пис">
@@ -87,10 +323,10 @@
                     <div class="input-group">
                         <label>Статус</label>
                         <select id="mangaStatus">
-                            <option value="planned">Запланировано</option>
-                            <option value="reading">Читаю</option>
-                            <option value="completed">Прочитано</option>
-                            <option value="dropped">Брошено</option>
+                            <option value="planned">📅 Запланировано</option>
+                            <option value="reading">👀 Читаю</option>
+                            <option value="completed">✅ Прочитано</option>
+                            <option value="dropped">❌ Брошено</option>
                         </select>
                     </div>
                     <div class="input-group">
@@ -100,14 +336,15 @@
                     <button class="btn" onclick="addManga()">📚 Добавить мангу</button>
                 </div>
                 
-                <h3>Мой список манги</h3>
+                <h3>📖 Мой список манги</h3>
                 <div id="mangaList" class="list">
                     <div class="loading">Загрузка...</div>
                 </div>
             </div>
             
+            <!-- Статистика секция -->
             <div id="stats" class="section">
-                <h3>Моя статистика</h3>
+                <h3>📈 Моя статистика</h3>
                 <div id="statsContent">
                     <div class="loading">Загрузка статистики...</div>
                 </div>
@@ -116,8 +353,8 @@
     </div>
 
     <script>
-        // Упрощенная версия с надежным localStorage
-        const STORAGE_KEY = 'animanga_simple_v2';
+        // Хранение данных в localStorage
+        const STORAGE_KEY = 'animanga_dark_theme';
         
         // Инициализация Telegram Web App
         let tg = window.Telegram.WebApp;
@@ -161,7 +398,7 @@
             const container = document.getElementById('animeList');
             
             if (!data.anime || data.anime.length === 0) {
-                container.innerHTML = '<div class="loading">Список аниме пуст</div>';
+                container.innerHTML = '<div class="loading">📺 Список аниме пуст</div>';
                 return;
             }
             
@@ -171,7 +408,7 @@
                         <div class="item-title">${anime.title}</div>
                         <div class="item-status">${getStatusText(anime.status)}</div>
                     </div>
-                    <div>Эпизоды: ${anime.episodes || 0}</div>
+                    <div class="item-details">Эпизоды: ${anime.episodes || 0}</div>
                 </div>
             `).join('');
         }
@@ -182,7 +419,7 @@
             const container = document.getElementById('mangaList');
             
             if (!data.manga || data.manga.length === 0) {
-                container.innerHTML = '<div class="loading">Список манги пуст</div>';
+                container.innerHTML = '<div class="loading">📖 Список манги пуст</div>';
                 return;
             }
             
@@ -192,7 +429,7 @@
                         <div class="item-title">${manga.title}</div>
                         <div class="item-status">${getStatusText(manga.status)}</div>
                     </div>
-                    <div>Главы: ${manga.chapters || 0}</div>
+                    <div class="item-details">Главы: ${manga.chapters || 0}</div>
                 </div>
             `).join('');
         }
@@ -219,11 +456,11 @@
                     </div>
                     <div class="stat-card">
                         <div class="stat-number">${stats.completed_anime}</div>
-                        <div class="stat-label">Просмотрено аниме</div>
+                        <div class="stat-label">Просмотрено</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-number">${stats.completed_manga}</div>
-                        <div class="stat-label">Прочитано манги</div>
+                        <div class="stat-label">Прочитано</div>
                     </div>
                 </div>
             `;
@@ -256,7 +493,7 @@
                 document.getElementById('animeEpisodes').value = '';
                 loadAnime();
                 loadStats();
-                alert('✅ Аниме добавлено!');
+                showNotification(`Аниме "${title}" добавлено!`);
             } else {
                 alert('❌ Ошибка сохранения');
             }
@@ -289,7 +526,7 @@
                 document.getElementById('mangaChapters').value = '';
                 loadManga();
                 loadStats();
-                alert('✅ Манга добавлена!');
+                showNotification(`Манга "${title}" добавлена!`);
             } else {
                 alert('❌ Ошибка сохранения');
             }
@@ -298,13 +535,26 @@
         // Вспомогательная функция для отображения статуса
         function getStatusText(status) {
             const statusMap = {
-                'planned': 'Запланировано',
-                'watching': 'Смотрю',
-                'reading': 'Читаю',
-                'completed': 'Завершено',
-                'dropped': 'Брошено'
+                'planned': '📅 Запланировано',
+                'watching': '👀 Смотрю',
+                'reading': '👀 Читаю',
+                'completed': '✅ Завершено',
+                'dropped': '❌ Брошено'
             };
             return statusMap[status] || status;
+        }
+        
+        // Красивое уведомление
+        function showNotification(message) {
+            if (tg && tg.showPopup) {
+                tg.showPopup({
+                    title: 'Успешно!',
+                    message: message,
+                    buttons: [{ type: 'ok' }]
+                });
+            } else {
+                alert('✅ ' + message);
+            }
         }
         
         // Инициализация при загрузке
