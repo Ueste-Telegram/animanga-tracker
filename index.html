@@ -160,6 +160,26 @@
         .btn:active {
             transform: translateY(0);
         }
+
+        .btn-edit {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            padding: 8px 15px;
+            font-size: 14px;
+            width: auto;
+            margin-right: 8px;
+        }
+
+        .btn-delete {
+            background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+            padding: 8px 15px;
+            font-size: 14px;
+            width: auto;
+        }
+
+        .btn-cancel {
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+            margin-top: 10px;
+        }
         
         .list {
             max-height: 300px;
@@ -217,6 +237,11 @@
             font-size: 11px;
             font-weight: 600;
         }
+
+        .item-actions {
+            display: flex;
+            gap: 8px;
+        }
         
         .item-details {
             color: #b0b0b0;
@@ -258,6 +283,33 @@
             color: #888888;
             padding: 30px;
             font-size: 16px;
+        }
+
+        .edit-form {
+            display: none;
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .search-box {
+            margin-bottom: 15px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.08);
+            color: white;
+            font-size: 14px;
+        }
+
+        .search-box input::placeholder {
+            color: #888888;
         }
         
         h3 {
@@ -307,6 +359,9 @@
                 </div>
                 
                 <h3>📺 Мой список аниме</h3>
+                <div class="search-box">
+                    <input type="text" id="animeSearch" placeholder="🔍 Поиск аниме..." onkeyup="searchAnime()">
+                </div>
                 <div id="animeList" class="list">
                     <div class="loading">Загрузка...</div>
                 </div>
@@ -337,6 +392,9 @@
                 </div>
                 
                 <h3>📖 Мой список манги</h3>
+                <div class="search-box">
+                    <input type="text" id="mangaSearch" placeholder="🔍 Поиск манги..." onkeyup="searchManga()">
+                </div>
                 <div id="mangaList" class="list">
                     <div class="loading">Загрузка...</div>
                 </div>
@@ -355,6 +413,8 @@
     <script>
         // Хранение данных в localStorage
         const STORAGE_KEY = 'animanga_dark_theme';
+        let editingItem = null;
+        let editingType = null;
         
         // Инициализация Telegram Web App
         let tg = window.Telegram.WebApp;
@@ -403,12 +463,40 @@
             }
             
             container.innerHTML = data.anime.map(anime => `
-                <div class="item">
+                <div class="item" id="anime-${anime.id}">
                     <div class="item-header">
                         <div class="item-title">${anime.title}</div>
-                        <div class="item-status">${getStatusText(anime.status)}</div>
+                        <div class="item-actions">
+                            <button class="btn btn-edit" onclick="editAnime('${anime.id}')">✏️</button>
+                            <button class="btn btn-delete" onclick="deleteAnime('${anime.id}')">🗑️</button>
+                        </div>
                     </div>
-                    <div class="item-details">Эпизоды: ${anime.episodes || 0}</div>
+                    <div class="item-details">
+                        <div>Эпизоды: ${anime.episodes || 0}</div>
+                        <div>Статус: ${getStatusText(anime.status)}</div>
+                    </div>
+                    <div class="edit-form" id="edit-anime-${anime.id}">
+                        <h4>✏️ Редактировать аниме</h4>
+                        <div class="input-group">
+                            <label>Название</label>
+                            <input type="text" id="edit-anime-title-${anime.id}" value="${anime.title}">
+                        </div>
+                        <div class="input-group">
+                            <label>Статус</label>
+                            <select id="edit-anime-status-${anime.id}">
+                                <option value="planned" ${anime.status === 'planned' ? 'selected' : ''}>📅 Запланировано</option>
+                                <option value="watching" ${anime.status === 'watching' ? 'selected' : ''}>👀 Смотрю</option>
+                                <option value="completed" ${anime.status === 'completed' ? 'selected' : ''}>✅ Просмотрено</option>
+                                <option value="dropped" ${anime.status === 'dropped' ? 'selected' : ''}>❌ Брошено</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label>Эпизоды</label>
+                            <input type="number" id="edit-anime-episodes-${anime.id}" value="${anime.episodes || 0}">
+                        </div>
+                        <button class="btn" onclick="saveAnimeEdit('${anime.id}')">💾 Сохранить</button>
+                        <button class="btn btn-cancel" onclick="cancelEdit('${anime.id}', 'anime')">❌ Отмена</button>
+                    </div>
                 </div>
             `).join('');
         }
@@ -424,12 +512,116 @@
             }
             
             container.innerHTML = data.manga.map(manga => `
-                <div class="item">
+                <div class="item" id="manga-${manga.id}">
                     <div class="item-header">
                         <div class="item-title">${manga.title}</div>
-                        <div class="item-status">${getStatusText(manga.status)}</div>
+                        <div class="item-actions">
+                            <button class="btn btn-edit" onclick="editManga('${manga.id}')">✏️</button>
+                            <button class="btn btn-delete" onclick="deleteManga('${manga.id}')">🗑️</button>
+                        </div>
                     </div>
-                    <div class="item-details">Главы: ${manga.chapters || 0}</div>
+                    <div class="item-details">
+                        <div>Главы: ${manga.chapters || 0}</div>
+                        <div>Статус: ${getStatusText(manga.status)}</div>
+                    </div>
+                    <div class="edit-form" id="edit-manga-${manga.id}">
+                        <h4>✏️ Редактировать мангу</h4>
+                        <div class="input-group">
+                            <label>Название</label>
+                            <input type="text" id="edit-manga-title-${manga.id}" value="${manga.title}">
+                        </div>
+                        <div class="input-group">
+                            <label>Статус</label>
+                            <select id="edit-manga-status-${manga.id}">
+                                <option value="planned" ${manga.status === 'planned' ? 'selected' : ''}>📅 Запланировано</option>
+                                <option value="reading" ${manga.status === 'reading' ? 'selected' : ''}>👀 Читаю</option>
+                                <option value="completed" ${manga.status === 'completed' ? 'selected' : ''}>✅ Прочитано</option>
+                                <option value="dropped" ${manga.status === 'dropped' ? 'selected' : ''}>❌ Брошено</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label>Главы</label>
+                            <input type="number" id="edit-manga-chapters-${manga.id}" value="${manga.chapters || 0}">
+                        </div>
+                        <button class="btn" onclick="saveMangaEdit('${manga.id}')">💾 Сохранить</button>
+                        <button class="btn btn-cancel" onclick="cancelEdit('${manga.id}', 'manga')">❌ Отмена</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // Поиск аниме
+        function searchAnime() {
+            const searchTerm = document.getElementById('animeSearch').value.toLowerCase();
+            const data = loadData();
+            
+            if (!searchTerm) {
+                loadAnime();
+                return;
+            }
+            
+            const filteredAnime = data.anime.filter(anime => 
+                anime.title.toLowerCase().includes(searchTerm)
+            );
+            
+            const container = document.getElementById('animeList');
+            
+            if (filteredAnime.length === 0) {
+                container.innerHTML = '<div class="loading">🔍 Ничего не найдено</div>';
+                return;
+            }
+            
+            container.innerHTML = filteredAnime.map(anime => `
+                <div class="item" id="anime-${anime.id}">
+                    <div class="item-header">
+                        <div class="item-title">${anime.title}</div>
+                        <div class="item-actions">
+                            <button class="btn btn-edit" onclick="editAnime('${anime.id}')">✏️</button>
+                            <button class="btn btn-delete" onclick="deleteAnime('${anime.id}')">🗑️</button>
+                        </div>
+                    </div>
+                    <div class="item-details">
+                        <div>Эпизоды: ${anime.episodes || 0}</div>
+                        <div>Статус: ${getStatusText(anime.status)}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // Поиск манги
+        function searchManga() {
+            const searchTerm = document.getElementById('mangaSearch').value.toLowerCase();
+            const data = loadData();
+            
+            if (!searchTerm) {
+                loadManga();
+                return;
+            }
+            
+            const filteredManga = data.manga.filter(manga => 
+                manga.title.toLowerCase().includes(searchTerm)
+            );
+            
+            const container = document.getElementById('mangaList');
+            
+            if (filteredManga.length === 0) {
+                container.innerHTML = '<div class="loading">🔍 Ничего не найдено</div>';
+                return;
+            }
+            
+            container.innerHTML = filteredManga.map(manga => `
+                <div class="item" id="manga-${manga.id}">
+                    <div class="item-header">
+                        <div class="item-title">${manga.title}</div>
+                        <div class="item-actions">
+                            <button class="btn btn-edit" onclick="editManga('${manga.id}')">✏️</button>
+                            <button class="btn btn-delete" onclick="deleteManga('${manga.id}')">🗑️</button>
+                        </div>
+                    </div>
+                    <div class="item-details">
+                        <div>Главы: ${manga.chapters || 0}</div>
+                        <div>Статус: ${getStatusText(manga.status)}</div>
+                    </div>
                 </div>
             `).join('');
         }
@@ -529,6 +721,148 @@
                 showNotification(`Манга "${title}" добавлена!`);
             } else {
                 alert('❌ Ошибка сохранения');
+            }
+        }
+        
+        // Редактирование аниме
+        function editAnime(id) {
+            // Скрываем все формы редактирования
+            document.querySelectorAll('.edit-form').forEach(form => {
+                form.style.display = 'none';
+            });
+            
+            // Показываем форму редактирования для выбранного элемента
+            const editForm = document.getElementById(`edit-anime-${id}`);
+            if (editForm) {
+                editForm.style.display = 'block';
+                editingItem = id;
+                editingType = 'anime';
+            }
+        }
+        
+        // Редактирование манги
+        function editManga(id) {
+            // Скрываем все формы редактирования
+            document.querySelectorAll('.edit-form').forEach(form => {
+                form.style.display = 'none';
+            });
+            
+            // Показываем форму редактирования для выбранного элемента
+            const editForm = document.getElementById(`edit-manga-${id}`);
+            if (editForm) {
+                editForm.style.display = 'block';
+                editingItem = id;
+                editingType = 'manga';
+            }
+        }
+        
+        // Сохранение редактирования аниме
+        function saveAnimeEdit(id) {
+            const title = document.getElementById(`edit-anime-title-${id}`).value.trim();
+            const status = document.getElementById(`edit-anime-status-${id}`).value;
+            const episodes = document.getElementById(`edit-anime-episodes-${id}`).value;
+            
+            if (!title) {
+                alert('Введите название аниме');
+                return;
+            }
+            
+            const data = loadData();
+            const animeIndex = data.anime.findIndex(a => a.id === id);
+            
+            if (animeIndex !== -1) {
+                data.anime[animeIndex] = {
+                    ...data.anime[animeIndex],
+                    title: title,
+                    status: status,
+                    episodes: parseInt(episodes) || 0,
+                    last_updated: new Date().toISOString()
+                };
+                
+                if (saveData(data)) {
+                    cancelEdit(id, 'anime');
+                    loadAnime();
+                    loadStats();
+                    showNotification(`Аниме "${title}" обновлено!`);
+                } else {
+                    alert('❌ Ошибка сохранения');
+                }
+            }
+        }
+        
+        // Сохранение редактирования манги
+        function saveMangaEdit(id) {
+            const title = document.getElementById(`edit-manga-title-${id}`).value.trim();
+            const status = document.getElementById(`edit-manga-status-${id}`).value;
+            const chapters = document.getElementById(`edit-manga-chapters-${id}`).value;
+            
+            if (!title) {
+                alert('Введите название манги');
+                return;
+            }
+            
+            const data = loadData();
+            const mangaIndex = data.manga.findIndex(m => m.id === id);
+            
+            if (mangaIndex !== -1) {
+                data.manga[mangaIndex] = {
+                    ...data.manga[mangaIndex],
+                    title: title,
+                    status: status,
+                    chapters: parseInt(chapters) || 0,
+                    last_updated: new Date().toISOString()
+                };
+                
+                if (saveData(data)) {
+                    cancelEdit(id, 'manga');
+                    loadManga();
+                    loadStats();
+                    showNotification(`Манга "${title}" обновлена!`);
+                } else {
+                    alert('❌ Ошибка сохранения');
+                }
+            }
+        }
+        
+        // Отмена редактирования
+        function cancelEdit(id, type) {
+            const editForm = document.getElementById(`edit-${type}-${id}`);
+            if (editForm) {
+                editForm.style.display = 'none';
+            }
+            editingItem = null;
+            editingType = null;
+        }
+        
+        // Удаление аниме
+        function deleteAnime(id) {
+            if (confirm('Вы уверены, что хотите удалить это аниме?')) {
+                const data = loadData();
+                data.anime = data.anime.filter(a => a.id !== id);
+                
+                if (saveData(data)) {
+                    loadAnime();
+                    loadStats();
+                    showNotification('Аниме удалено!');
+                } else {
+                    alert('❌ Ошибка удаления');
+                }
+            }
+        }
+        
+        // Удаление манги
+        function deleteManga(id) {
+            if (confirm('Вы уверены, что хотите удалить эту мангу?')) {
+                const data = loadData();
+                data.manga = data.manga.filter(m => m.id !== id);
+                
+                if (saveData(data)) {
+                    loadManga();
+                    loadStats();
+                    showNotification('Манга удалена!');
+                } else {
+                    alert('❌ Ошибка удаления');
+                }
             }
         }
         
