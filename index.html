@@ -4,6 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AniManga Tracker</title>
+    
+    <!-- PWA мета-теги -->
+    <meta name="theme-color" content="#667eea">
+    <meta name="description" content="Track your anime and manga progress">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="icon-192x192.png">
+    <link rel="apple-touch-icon" href="icon-192x192.png">
+    
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -674,6 +682,48 @@
             line-height: 1.4;
         }
 
+        /* 🔧 PWA УВЕДОМЛЕНИЯ */
+        .pwa-install-prompt {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background: var(--card-color);
+            border: 2px solid var(--accent-color);
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 4px 20px var(--shadow-color);
+            z-index: 10001;
+            display: none;
+        }
+
+        .pwa-install-prompt.show {
+            display: block;
+            animation: slideInUp 0.3s ease;
+        }
+
+        @keyframes slideInUp {
+            from {
+                transform: translateY(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .pwa-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .pwa-buttons .btn {
+            margin: 0;
+            flex: 1;
+        }
+
         /* 🔧 АДАПТИВНОСТЬ */
         @media (max-width: 480px) {
             .container {
@@ -908,6 +958,17 @@
 </head>
 <body class="dark-theme">
     <div class="tg-background"></div>
+    
+    <!-- PWA Install Prompt -->
+    <div class="pwa-install-prompt" id="pwaInstallPrompt">
+        <h4>📱 Установить приложение</h4>
+        <p>Установите AniManga Tracker для быстрого доступа без Telegram</p>
+        <div class="pwa-buttons">
+            <button class="btn" onclick="installPWA()">✅ Установить</button>
+            <button class="btn btn-secondary" onclick="dismissPWA()">❌ Позже</button>
+        </div>
+    </div>
+    
     <div class="container">
         <!-- 🔔 Панель уведомлений -->
         <div id="notificationsPanel"></div>
@@ -1168,6 +1229,15 @@
                     <button class="lang-btn" onclick="setLanguage('en')" id="langEn">🇺🇸 English</button>
                 </div>
                 
+                <!-- PWA Section -->
+                <div class="settings-option">
+                    <div>
+                        <div class="settings-label" id="settingsPwaLabel">Установить приложение</div>
+                        <div class="settings-description" id="settingsPwaDesc">Установите приложение для доступа без Telegram</div>
+                    </div>
+                    <button class="btn-secondary" style="padding: 10px 15px; width: auto;" onclick="showPWAInstallPrompt()" id="btnPwaInstall">📱 Установить</button>
+                </div>
+                
                 <div class="settings-option">
                     <div>
                         <div class="settings-label" id="settingsExportLabel">Экспорт данных</div>
@@ -1204,6 +1274,74 @@
             anime: '',
             manga: ''
         };
+        let deferredPrompt = null;
+        let isPWAInstalled = false;
+
+        // 🔧 PWA ФУНКЦИОНАЛЬНОСТЬ
+        function initializePWA() {
+            // Проверяем, установлено ли приложение
+            if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
+                isPWAInstalled = true;
+                console.log('PWA is installed');
+            }
+
+            // Обработчик события beforeinstallprompt
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPrompt = e;
+                console.log('PWA install prompt available');
+                
+                // Показываем кнопку установки в настройках
+                document.getElementById('btnPwaInstall').style.display = 'block';
+            });
+
+            // Обработчик события appinstalled
+            window.addEventListener('appinstalled', () => {
+                isPWAInstalled = true;
+                deferredPrompt = null;
+                console.log('PWA was installed');
+                showNotification(getText('pwaInstalledTitle'), getText('pwaInstalledMessage'), 'success');
+                document.getElementById('pwaInstallPrompt').classList.remove('show');
+                document.getElementById('btnPwaInstall').style.display = 'none';
+            });
+
+            // Регистрируем Service Worker
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/sw.js')
+                    .then((registration) => {
+                        console.log('SW registered: ', registration);
+                    })
+                    .catch((registrationError) => {
+                        console.log('SW registration failed: ', registrationError);
+                    });
+            }
+        }
+
+        function showPWAInstallPrompt() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('User accepted the install prompt');
+                    } else {
+                        console.log('User dismissed the install prompt');
+                    }
+                    deferredPrompt = null;
+                });
+            } else if (isPWAInstalled) {
+                showNotification(getText('pwaAlreadyInstalledTitle'), getText('pwaAlreadyInstalledMessage'), 'info');
+            } else {
+                showNotification(getText('pwaNotSupportedTitle'), getText('pwaNotSupportedMessage'), 'warning');
+            }
+        }
+
+        function installPWA() {
+            showPWAInstallPrompt();
+        }
+
+        function dismissPWA() {
+            document.getElementById('pwaInstallPrompt').classList.remove('show');
+        }
 
         // 🔧 ТЕКСТЫ НА РАЗНЫХ ЯЗЫКАХ
         const translations = {
@@ -1249,6 +1387,9 @@
                 languageDesc: "Выберите язык интерфейса",
                 languageRu: "🇷🇺 Русский",
                 languageEn: "🇺🇸 English",
+                pwaLabel: "Установить приложение",
+                pwaDesc: "Установите приложение для доступа без Telegram",
+                pwaInstall: "📱 Установить",
                 exportLabel: "Экспорт данных",
                 exportDesc: "Скачайте резервную копию ваших данных",
                 importLabel: "Импорт данных",
@@ -1280,7 +1421,15 @@
                 loadingManga: "Загрузка манги...",
                 completed: "Завершено!",
                 continueWatching: "Продолжить просмотр",
-                continueReading: "Продолжить чтение"
+                continueReading: "Продолжить чтение",
+                pwaInstallTitle: "Установить приложение",
+                pwaInstallMessage: "Установите AniManga Tracker для быстрого доступа без Telegram",
+                pwaInstalledTitle: "Приложение установлено!",
+                pwaInstalledMessage: "Теперь вы можете открывать приложение без Telegram",
+                pwaAlreadyInstalledTitle: "Приложение уже установлено",
+                pwaAlreadyInstalledMessage: "Приложение уже установлено на ваше устройство",
+                pwaNotSupportedTitle: "Установка недоступна",
+                pwaNotSupportedMessage: "Ваш браузер не поддерживает установку приложений"
             },
             en: {
                 welcome: "Welcome to AniManga Tracker!",
@@ -1324,6 +1473,9 @@
                 languageDesc: "Choose interface language",
                 languageRu: "🇷🇺 Russian",
                 languageEn: "🇺🇸 English",
+                pwaLabel: "Install App",
+                pwaDesc: "Install the app for access without Telegram",
+                pwaInstall: "📱 Install",
                 exportLabel: "Export Data",
                 exportDesc: "Download your data backup",
                 importLabel: "Import Data",
@@ -1355,7 +1507,15 @@
                 loadingManga: "Loading manga...",
                 completed: "Completed!",
                 continueWatching: "Continue watching",
-                continueReading: "Continue reading"
+                continueReading: "Continue reading",
+                pwaInstallTitle: "Install App",
+                pwaInstallMessage: "Install AniManga Tracker for quick access without Telegram",
+                pwaInstalledTitle: "App installed!",
+                pwaInstalledMessage: "You can now open the app without Telegram",
+                pwaAlreadyInstalledTitle: "App already installed",
+                pwaAlreadyInstalledMessage: "The app is already installed on your device",
+                pwaNotSupportedTitle: "Installation not available",
+                pwaNotSupportedMessage: "Your browser doesn't support app installation"
             }
         };
 
@@ -1381,7 +1541,13 @@
                 
                 console.log('Telegram Web App initialized');
             } else {
-                console.log('Telegram Web App not detected, running in browser mode');
+                console.log('Telegram Web App not detected, running in standalone mode');
+                // Показываем PWA промпт если не в Telegram
+                setTimeout(() => {
+                    if (!isPWAInstalled && deferredPrompt) {
+                        document.getElementById('pwaInstallPrompt').classList.add('show');
+                    }
+                }, 3000);
             }
         }
 
@@ -1457,6 +1623,9 @@
             document.getElementById('settingsLanguageDesc').textContent = getText('languageDesc');
             document.getElementById('langRu').textContent = getText('languageRu');
             document.getElementById('langEn').textContent = getText('languageEn');
+            document.getElementById('settingsPwaLabel').textContent = getText('pwaLabel');
+            document.getElementById('settingsPwaDesc').textContent = getText('pwaDesc');
+            document.getElementById('btnPwaInstall').textContent = getText('pwaInstall');
             document.getElementById('settingsExportLabel').textContent = getText('exportLabel');
             document.getElementById('settingsExportDesc').textContent = getText('exportDesc');
             document.getElementById('btnExport').textContent = getText('exportBtn');
@@ -1464,6 +1633,12 @@
             document.getElementById('settingsImportDesc').textContent = getText('importDesc');
             document.getElementById('btnImport').textContent = getText('importBtn');
             document.getElementById('btnClearData').textContent = getText('clearData');
+            
+            // Обновляем PWA промпт
+            document.querySelector('#pwaInstallPrompt h4').textContent = getText('pwaInstallTitle');
+            document.querySelector('#pwaInstallPrompt p').textContent = getText('pwaInstallMessage');
+            document.querySelector('#pwaInstallPrompt .pwa-buttons .btn:first-child').textContent = '✅ ' + (currentLanguage === 'ru' ? 'Установить' : 'Install');
+            document.querySelector('#pwaInstallPrompt .pwa-buttons .btn:last-child').textContent = '❌ ' + (currentLanguage === 'ru' ? 'Позже' : 'Later');
             
             // Обновляем активные кнопки языка
             document.querySelectorAll('.lang-btn').forEach(btn => {
@@ -2608,6 +2783,9 @@
 
         // 🔧 ИНИЦИАЛИЗАЦИЯ ПРИЛОЖЕНИЯ
         document.addEventListener('DOMContentLoaded', function() {
+            // Инициализируем PWA
+            initializePWA();
+            
             // Инициализируем Telegram Web App
             initTelegramApp();
             
@@ -2664,4 +2842,4 @@
         }
     </script>
 </body>
-    </html>
+                    </html>
