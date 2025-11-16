@@ -2,18 +2,254 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AniManga Tracker</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* Все предыдущие стили остаются */
+        /* БАЗОВЫЕ СТИЛИ ДЛЯ TELEGRAM MINI APP */
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
         
-        /* Новые стили для системы уведомлений */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: white;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 100%;
+            padding: 10px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-top: 10px;
+        }
+        
+        .header h1 {
+            margin: 0 0 5px 0;
+            font-size: 24px;
+            font-weight: 700;
+        }
+        
+        .header p {
+            margin: 0;
+            color: #b0b0b0;
+            font-size: 14px;
+        }
+        
+        /* ТАБЫ - ОПТИМИЗИРОВАНЫ ДЛЯ МОБИЛЬНЫХ */
+        .tabs {
+            display: flex;
+            overflow-x: auto;
+            gap: 5px;
+            margin-bottom: 20px;
+            padding-bottom: 5px;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+        
+        .tabs::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .tab {
+            flex: 1;
+            min-width: 70px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: white;
+            padding: 12px 8px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 12px;
+            text-align: center;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+        
+        .tab.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        /* СЕКЦИИ КОНТЕНТА */
+        .content {
+            position: relative;
+        }
+        
+        .section {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .section.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* ФОРМЫ - УВЕЛИЧЕНЫ ДЛЯ КАСАНИЯ */
+        .form-group {
+            margin-bottom: 16px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #cccccc;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 14px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            color: white;
+            font-size: 16px; /* Увеличим для удобства ввода */
+            transition: all 0.2s ease;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: #667eea;
+            background: rgba(255, 255, 255, 0.15);
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            color: white;
+            padding: 14px 20px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            width: 100%;
+            transition: all 0.2s ease;
+            margin-bottom: 10px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        /* КАРТОЧКИ ЭЛЕМЕНТОВ */
+        .item-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.2s ease;
+        }
+        
+        .item-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-2px);
+        }
+        
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+        
+        .item-title {
+            font-weight: 600;
+            font-size: 16px;
+            margin: 0;
+            color: white;
+        }
+        
+        .item-status {
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .item-meta {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 12px;
+            font-size: 12px;
+            color: #b0b0b0;
+        }
+        
+        .item-progress {
+            margin-bottom: 12px;
+        }
+        
+        .progress-bar {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 5px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            font-size: 11px;
+            color: #b0b0b0;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .item-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .action-btn {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: white;
+            padding: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s ease;
+        }
+        
+        .action-btn:hover {
+            background: rgba(102, 126, 234, 0.3);
+        }
+        
+        /* СИСТЕМА УВЕДОМЛЕНИЙ */
         .notifications-panel {
             position: fixed;
             top: 20px;
-            right: 20px;
+            right: 10px;
             z-index: 1000;
             max-width: 300px;
         }
@@ -80,10 +316,7 @@
             flex-shrink: 0;
         }
         
-        .notification-close:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-        
+        /* СЕКЦИЯ НАПОМИНАНИЙ */
         .reminders-section {
             margin-bottom: 25px;
             padding: 20px;
@@ -103,28 +336,6 @@
             gap: 12px;
         }
         
-        .reminder-icon {
-            font-size: 20px;
-            flex-shrink: 0;
-        }
-        
-        .reminder-content {
-            flex: 1;
-        }
-        
-        .reminder-title {
-            font-weight: 600;
-            margin-bottom: 5px;
-            font-size: 14px;
-            color: white;
-        }
-        
-        .reminder-description {
-            font-size: 12px;
-            color: #b0b0b0;
-            line-height: 1.4;
-        }
-        
         .reminder-actions {
             display: flex;
             gap: 8px;
@@ -134,50 +345,20 @@
             background: rgba(255, 255, 255, 0.1);
             border: none;
             color: white;
-            padding: 6px 12px;
+            padding: 8px 12px;
             border-radius: 8px;
             font-size: 12px;
             cursor: pointer;
             transition: all 0.2s ease;
         }
         
-        .reminder-btn:hover {
-            background: rgba(102, 126, 234, 0.3);
-        }
-        
-        .reminder-btn.primary {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-        }
-        
-        .goals-section {
-            margin-bottom: 25px;
-        }
-        
+        /* ЦЕЛИ */
         .goal-card {
             background: rgba(255, 255, 255, 0.05);
             padding: 20px;
             border-radius: 12px;
             margin-bottom: 15px;
             border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        .goal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-        
-        .goal-title {
-            font-weight: 600;
-            color: white;
-            font-size: 16px;
-        }
-        
-        .goal-progress {
-            font-size: 14px;
-            color: #667eea;
-            font-weight: 600;
         }
         
         .goal-bar {
@@ -195,46 +376,13 @@
             transition: width 0.5s ease;
         }
         
-        .goal-stats {
-            display: flex;
-            justify-content: space-between;
-            font-size: 12px;
-            color: #b0b0b0;
-        }
-        
-        .empty-reminders {
-            text-align: center;
-            padding: 30px;
-            color: #888;
-        }
-        
-        .empty-reminders .icon {
-            font-size: 40px;
-            margin-bottom: 15px;
-            opacity: 0.5;
-        }
-        
+        /* НАСТРОЙКИ */
         .settings-option {
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 15px 0;
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        }
-        
-        .settings-option:last-child {
-            border-bottom: none;
-        }
-        
-        .settings-label {
-            color: #cccccc;
-            font-size: 14px;
-        }
-        
-        .settings-description {
-            color: #888;
-            font-size: 12px;
-            margin-top: 5px;
         }
         
         .switch {
@@ -282,17 +430,103 @@
             transform: translateX(26px);
         }
         
-        .select-small {
+        /* СТАТУСЫ */
+        .status-tabs {
+            display: flex;
+            overflow-x: auto;
+            gap: 5px;
+            margin-bottom: 15px;
+            padding-bottom: 5px;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .status-tab {
+            flex: 1;
             background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 8px;
+            border: none;
             color: white;
-            padding: 6px 10px;
+            padding: 10px;
+            border-radius: 10px;
+            cursor: pointer;
             font-size: 12px;
+            text-align: center;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+        
+        .status-tab.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+        
+        /* РЕЙТИНГ */
+        .rating {
+            display: flex;
+            gap: 2px;
+            margin: 10px 0;
+        }
+        
+        .star {
+            font-size: 20px;
+            color: #555;
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+        
+        .star.active {
+            color: #FFD700;
+        }
+        
+        /* ТЕГИ */
+        .tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin: 10px 0;
+        }
+        
+        .tag {
+            background: rgba(102, 126, 234, 0.2);
+            color: #667eea;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+        }
+        
+        /* АДАПТИВНОСТЬ ДЛЯ МОБИЛЬНЫХ */
+        @media (max-width: 480px) {
+            .container {
+                padding: 8px;
+            }
+            
+            .tab {
+                padding: 10px 6px;
+                font-size: 11px;
+            }
+            
+            .form-control {
+                padding: 12px;
+            }
+            
+            .btn {
+                padding: 12px 16px;
+                font-size: 14px;
+            }
+        }
+        
+        /* УЛУЧШЕНИЯ ДЛЯ TELEGRAM WEB APP */
+        .tg-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            z-index: -1;
         }
     </style>
 </head>
 <body>
+    <div class="tg-background"></div>
     <div class="container">
         <!-- Панель уведомлений -->
         <div class="notifications-panel" id="notificationsPanel"></div>
@@ -311,22 +545,128 @@
         </div>
         
         <div class="content">
-            <!-- Аниме секция (без изменений) -->
+            <!-- СЕКЦИЯ АНИМЕ -->
             <div id="anime" class="section active">
-                <!-- ... существующий контент аниме ... -->
+                <div class="form-group">
+                    <label for="animeTitle">Название аниме</label>
+                    <input type="text" id="animeTitle" class="form-control" placeholder="Введите название">
+                </div>
+                
+                <div class="form-group">
+                    <label for="animeStatus">Статус</label>
+                    <select id="animeStatus" class="form-control">
+                        <option value="watching">Смотрю</option>
+                        <option value="planned">В планах</option>
+                        <option value="completed">Просмотрено</option>
+                        <option value="dropped">Брошено</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="animeEpisodes">Всего эпизодов</label>
+                    <input type="number" id="animeEpisodes" class="form-control" value="12" min="1">
+                </div>
+                
+                <div class="form-group">
+                    <label for="animeProgress">Просмотрено эпизодов</label>
+                    <input type="number" id="animeProgress" class="form-control" value="0" min="0">
+                </div>
+                
+                <div class="form-group">
+                    <label>Рейтинг</label>
+                    <div class="rating" id="animeRating">
+                        <span class="star" data-value="1">★</span>
+                        <span class="star" data-value="2">★</span>
+                        <span class="star" data-value="3">★</span>
+                        <span class="star" data-value="4">★</span>
+                        <span class="star" data-value="5">★</span>
+                    </div>
+                </div>
+                
+                <button class="btn" onclick="addAnime()">Добавить аниме</button>
+                
+                <div class="status-tabs" id="animeStatusTabs">
+                    <button class="status-tab active" data-status="all">Все</button>
+                    <button class="status-tab" data-status="watching">Смотрю</button>
+                    <button class="status-tab" data-status="planned">В планах</button>
+                    <button class="status-tab" data-status="completed">Просмотрено</button>
+                    <button class="status-tab" data-status="dropped">Брошено</button>
+                </div>
+                
+                <div id="animeList">
+                    <!-- Список аниме будет здесь -->
+                </div>
             </div>
             
-            <!-- Манга секция (без изменений) -->
+            <!-- СЕКЦИЯ МАНГИ -->
             <div id="manga" class="section">
-                <!-- ... существующий контент манги ... -->
+                <div class="form-group">
+                    <label for="mangaTitle">Название манги</label>
+                    <input type="text" id="mangaTitle" class="form-control" placeholder="Введите название">
+                </div>
+                
+                <div class="form-group">
+                    <label for="mangaStatus">Статус</label>
+                    <select id="mangaStatus" class="form-control">
+                        <option value="reading">Читаю</option>
+                        <option value="planned">В планах</option>
+                        <option value="completed">Прочитано</option>
+                        <option value="dropped">Брошено</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="mangaChapters">Всего глав</label>
+                    <input type="number" id="mangaChapters" class="form-control" value="50" min="1">
+                </div>
+                
+                <div class="form-group">
+                    <label for="mangaProgress">Прочитано глав</label>
+                    <input type="number" id="mangaProgress" class="form-control" value="0" min="0">
+                </div>
+                
+                <div class="form-group">
+                    <label>Рейтинг</label>
+                    <div class="rating" id="mangaRating">
+                        <span class="star" data-value="1">★</span>
+                        <span class="star" data-value="2">★</span>
+                        <span class="star" data-value="3">★</span>
+                        <span class="star" data-value="4">★</span>
+                        <span class="star" data-value="5">★</span>
+                    </div>
+                </div>
+                
+                <button class="btn" onclick="addManga()">Добавить мангу</button>
+                
+                <div class="status-tabs" id="mangaStatusTabs">
+                    <button class="status-tab active" data-status="all">Все</button>
+                    <button class="status-tab" data-status="reading">Читаю</button>
+                    <button class="status-tab" data-status="planned">В планах</button>
+                    <button class="status-tab" data-status="completed">Прочитано</button>
+                    <button class="status-tab" data-status="dropped">Брошено</button>
+                </div>
+                
+                <div id="mangaList">
+                    <!-- Список манги будет здесь -->
+                </div>
             </div>
             
-            <!-- Статистика секция (без изменений) -->
+            <!-- СЕКЦИЯ СТАТИСТИКИ -->
             <div id="stats" class="section">
-                <!-- ... существующий контент статистики ... -->
+                <div class="reminders-section">
+                    <h3>📊 Общая статистика</h3>
+                    <div id="generalStats">
+                        <div class="loading">Загрузка статистики...</div>
+                    </div>
+                </div>
+                
+                <div class="reminders-section">
+                    <h3>📈 Графики</h3>
+                    <canvas id="statsChart" width="400" height="200"></canvas>
+                </div>
             </div>
             
-            <!-- Новая секция: Напоминания -->
+            <!-- СЕКЦИЯ НАПОМИНАНИЙ -->
             <div id="reminders" class="section">
                 <div class="reminders-section">
                     <h3>🔔 Активные напоминания</h3>
@@ -338,51 +678,14 @@
                 <div class="goals-section">
                     <h3>🎯 Мои цели</h3>
                     <div id="goalsList">
-                        <div class="goal-card">
-                            <div class="goal-header">
-                                <div class="goal-title">📅 Еженедельный просмотр</div>
-                                <div class="goal-progress">0/5 эпизодов</div>
-                            </div>
-                            <div class="goal-bar">
-                                <div class="goal-fill" style="width: 0%"></div>
-                            </div>
-                            <div class="goal-stats">
-                                <span>На этой неделе</span>
-                                <span>0%</span>
-                            </div>
-                        </div>
-                        
-                        <div class="goal-card">
-                            <div class="goal-header">
-                                <div class="goal-title">📚 Еженедельное чтение</div>
-                                <div class="goal-progress">0/3 главы</div>
-                            </div>
-                            <div class="goal-bar">
-                                <div class="goal-fill" style="width: 0%"></div>
-                            </div>
-                            <div class="goal-stats">
-                                <span>На этой неделе</span>
-                                <span>0%</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="reminders-section">
-                    <h3>📈 Рекомендации</h3>
-                    <div id="recommendationsList">
-                        <div class="empty-reminders">
-                            <div class="icon">💡</div>
-                            <h4>Нет рекомендаций</h4>
-                            <p>Добавьте больше аниме и манги для персонализированных рекомендаций</p>
-                        </div>
+                        <!-- Цели будут здесь -->
                     </div>
                 </div>
             </div>
             
-            <!-- Настройки секция (обновленная) -->
+            <!-- СЕКЦИЯ НАСТРОЕК -->
             <div id="settings" class="section">
-                <div class="backup-section">
+                <div class="reminders-section">
                     <h3>🔔 Настройки уведомлений</h3>
                     
                     <div class="settings-option">
@@ -406,55 +709,396 @@
                             <span class="slider"></span>
                         </label>
                     </div>
-                    
-                    <div class="settings-option">
-                        <div>
-                            <div class="settings-label">Уведомления о целях</div>
-                            <div class="settings-description">Уведомлять о прогрессе целей</div>
-                        </div>
-                        <label class="switch">
-                            <input type="checkbox" id="goalNotifications" checked onchange="saveNotificationSettings()">
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                    
-                    <div class="settings-option">
-                        <div>
-                            <div class="settings-label">Частота напоминаний</div>
-                            <div class="settings-description">Как часто показывать напоминания</div>
-                        </div>
-                        <select class="select-small" id="reminderFrequency" onchange="saveNotificationSettings()">
-                            <option value="1">Каждый день</option>
-                            <option value="3" selected>Каждые 3 дня</option>
-                            <option value="7">Раз в неделю</option>
-                        </select>
-                    </div>
                 </div>
                 
-                <!-- Существующие разделы экспорта/импорта -->
-                <div class="backup-section">
-                    <h3>📤 Экспорт данных</h3>
-                    <!-- ... существующий контент экспорта ... -->
-                </div>
-                
-                <div class="backup-section">
-                    <h3>📥 Импорт данных</h3>
-                    <!-- ... существующий контент импорта ... -->
-                </div>
-                
-                <div class="backup-info">
-                    <!-- ... существующая информация о данных ... -->
-                </div>
-                
-                <div class="cloud-backup">
-                    <!-- ... существующий контент облака ... -->
+                <div class="reminders-section">
+                    <h3>💾 Управление данными</h3>
+                    <button class="btn" onclick="exportData()">Экспорт данных</button>
+                    <button class="btn btn-secondary" onclick="importData()">Импорт данных</button>
+                    <button class="btn btn-secondary" onclick="clearData()">Очистить все данные</button>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // 🔔 СИСТЕМА УВЕДОМЛЕНИЙ И НАПОМИНАНИЙ
+        // 🔧 ОСНОВНЫЕ ПЕРЕМЕННЫЕ
+        let tg = null;
+        let currentAnimeRating = 0;
+        let currentMangaRating = 0;
+        
+        // 🔧 ИНИЦИАЛИЗАЦИЯ TELEGRAM WEB APP
+        function initTelegramApp() {
+            if (window.Telegram && window.Telegram.WebApp) {
+                tg = window.Telegram.WebApp;
+                tg.expand();
+                tg.enableClosingConfirmation();
+                
+                // Устанавливаем тему Telegram
+                if (tg.colorScheme === 'dark') {
+                    document.body.style.background = 'linear-gradient(135deg, #1a1a2e, #16213e)';
+                } else {
+                    document.body.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
+                }
+                
+                console.log('Telegram Web App инициализирован');
+            } else {
+                console.log('Telegram Web App не обнаружен, работаем в браузере');
+            }
+        }
+        
+        // 🔧 СИСТЕМА ХРАНЕНИЯ ДАННЫХ
+        function getUserId() {
+            if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                return tg.initDataUnsafe.user.id.toString();
+            }
+            return 'default_user';
+        }
+        
+        function loadData() {
+            const userId = getUserId();
+            const key = `animanga_data_${userId}`;
+            try {
+                const data = localStorage.getItem(key);
+                if (data) {
+                    return JSON.parse(data);
+                }
+            } catch (e) {
+                console.error('Ошибка загрузки данных:', e);
+            }
+            
+            // Возвращаем структуру по умолчанию
+            return {
+                anime: [],
+                manga: [],
+                settings: {},
+                notificationSettings: {
+                    enabled: true,
+                    progressReminders: true,
+                    goalNotifications: true,
+                    frequency: 3
+                }
+            };
+        }
+        
+        function saveData(data) {
+            const userId = getUserId();
+            const key = `animanga_data_${userId}`;
+            try {
+                localStorage.setItem(key, JSON.stringify(data));
+                return true;
+            } catch (e) {
+                console.error('Ошибка сохранения данных:', e);
+                return false;
+            }
+        }
+        
+        // 🔧 СИСТЕМА РЕЙТИНГА
+        function initializeRatingSystem() {
+            // Аниме рейтинг
+            const animeStars = document.querySelectorAll('#animeRating .star');
+            animeStars.forEach(star => {
+                star.addEventListener('click', function() {
+                    const value = parseInt(this.getAttribute('data-value'));
+                    currentAnimeRating = value;
+                    
+                    animeStars.forEach((s, index) => {
+                        if (index < value) {
+                            s.classList.add('active');
+                        } else {
+                            s.classList.remove('active');
+                        }
+                    });
+                });
+            });
+            
+            // Манга рейтинг
+            const mangaStars = document.querySelectorAll('#mangaRating .star');
+            mangaStars.forEach(star => {
+                star.addEventListener('click', function() {
+                    const value = parseInt(this.getAttribute('data-value'));
+                    currentMangaRating = value;
+                    
+                    mangaStars.forEach((s, index) => {
+                        if (index < value) {
+                            s.classList.add('active');
+                        } else {
+                            s.classList.remove('active');
+                        }
+                    });
+                });
+            });
+        }
+        
+        // 🔧 СИСТЕМА СТАТУСОВ
+        function initializeStatusTabs() {
+            // Аниме статусы
+            const animeTabs = document.querySelectorAll('#animeStatusTabs .status-tab');
+            animeTabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    animeTabs.forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    const status = this.getAttribute('data-status');
+                    filterAnimeByStatus(status);
+                });
+            });
+            
+            // Манга статусы
+            const mangaTabs = document.querySelectorAll('#mangaStatusTabs .status-tab');
+            mangaTabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    mangaTabs.forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    const status = this.getAttribute('data-status');
+                    filterMangaByStatus(status);
+                });
+            });
+        }
+        
+        // 🔧 ФУНКЦИИ ДЛЯ АНИМЕ
+        function addAnime() {
+            const title = document.getElementById('animeTitle').value.trim();
+            const status = document.getElementById('animeStatus').value;
+            const episodes = parseInt(document.getElementById('animeEpisodes').value) || 12;
+            const progress = parseInt(document.getElementById('animeProgress').value) || 0;
+            const rating = currentAnimeRating;
+            
+            if (!title) {
+                showNotification('Ошибка', 'Введите название аниме', 'error');
+                return;
+            }
+            
+            const data = loadData();
+            const newAnime = {
+                id: Date.now().toString(),
+                title,
+                status,
+                episodes,
+                progress,
+                rating,
+                createdAt: new Date().toISOString(),
+                lastUpdated: new Date().toISOString()
+            };
+            
+            data.anime = data.anime || [];
+            data.anime.push(newAnime);
+            
+            if (saveData(data)) {
+                showNotification('Успех', 'Аниме добавлено!', 'success');
+                resetForm('anime');
+                loadAnimeContent();
+            } else {
+                showNotification('Ошибка', 'Ошибка сохранения', 'error');
+            }
+        }
+        
+        function loadAnimeContent() {
+            const data = loadData();
+            const animeList = document.getElementById('animeList');
+            const activeTab = document.querySelector('#animeStatusTabs .status-tab.active');
+            const status = activeTab ? activeTab.getAttribute('data-status') : 'all';
+            
+            let animeToShow = data.anime || [];
+            if (status !== 'all') {
+                animeToShow = animeToShow.filter(anime => anime.status === status);
+            }
+            
+            if (animeToShow.length === 0) {
+                animeList.innerHTML = `
+                    <div class="empty-reminders">
+                        <div class="icon">🎬</div>
+                        <h4>Нет аниме</h4>
+                        <p>Добавьте первое аниме в свою коллекцию</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            animeList.innerHTML = animeToShow.map(anime => {
+                const progressPercent = anime.episodes > 0 ? Math.round((anime.progress / anime.episodes) * 100) : 0;
+                const statusText = getStatusText(anime.status);
+                const ratingStars = '★'.repeat(anime.rating) + '☆'.repeat(5 - anime.rating);
+                
+                return `
+                    <div class="item-card">
+                        <div class="item-header">
+                            <div class="item-title">${anime.title}</div>
+                            <div class="item-status">${statusText}</div>
+                        </div>
+                        <div class="item-meta">
+                            <span>Эпизоды: ${anime.progress}/${anime.episodes}</span>
+                            <span>Рейтинг: ${ratingStars}</span>
+                        </div>
+                        <div class="item-progress">
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: ${progressPercent}%"></div>
+                            </div>
+                            <div class="progress-text">
+                                <span>Прогресс</span>
+                                <span>${progressPercent}%</span>
+                            </div>
+                        </div>
+                        <div class="item-actions">
+                            <button class="action-btn" onclick="updateAnimeProgress('${anime.id}', ${anime.progress + 1})">+1 эп.</button>
+                            <button class="action-btn" onclick="editAnime('${anime.id}')">✏️</button>
+                            <button class="action-btn" onclick="deleteAnime('${anime.id}')">🗑️</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function filterAnimeByStatus(status) {
+            loadAnimeContent();
+        }
+        
+        function updateAnimeProgress(id, newProgress) {
+            const data = loadData();
+            const anime = data.anime.find(a => a.id === id);
+            
+            if (anime) {
+                anime.progress = Math.min(newProgress, anime.episodes);
+                anime.lastUpdated = new Date().toISOString();
+                
+                if (anime.progress >= anime.episodes && anime.status !== 'completed') {
+                    anime.status = 'completed';
+                    showNotification('Поздравляем!', `Вы завершили "${anime.title}"!`, 'success');
+                }
+                
+                saveData(data);
+                loadAnimeContent();
+                updateGoals();
+            }
+        }
+        
+        function editAnime(id) {
+            // Реализация редактирования
+            showNotification('Инфо', 'Функция редактирования в разработке', 'info');
+        }
+        
+        function deleteAnime(id) {
+            if (confirm('Удалить это аниме?')) {
+                const data = loadData();
+                data.anime = data.anime.filter(a => a.id !== id);
+                saveData(data);
+                loadAnimeContent();
+                showNotification('Успех', 'Аниме удалено', 'success');
+            }
+        }
+        
+        // 🔧 ФУНКЦИИ ДЛЯ МАНГИ (аналогично аниме)
+        function addManga() {
+            const title = document.getElementById('mangaTitle').value.trim();
+            const status = document.getElementById('mangaStatus').value;
+            const chapters = parseInt(document.getElementById('mangaChapters').value) || 50;
+            const progress = parseInt(document.getElementById('mangaProgress').value) || 0;
+            const rating = currentMangaRating;
+            
+            if (!title) {
+                showNotification('Ошибка', 'Введите название манги', 'error');
+                return;
+            }
+            
+            const data = loadData();
+            const newManga = {
+                id: Date.now().toString(),
+                title,
+                status,
+                chapters,
+                progress,
+                rating,
+                createdAt: new Date().toISOString(),
+                lastUpdated: new Date().toISOString()
+            };
+            
+            data.manga = data.manga || [];
+            data.manga.push(newManga);
+            
+            if (saveData(data)) {
+                showNotification('Успех', 'Манга добавлена!', 'success');
+                resetForm('manga');
+                loadMangaContent();
+            } else {
+                showNotification('Ошибка', 'Ошибка сохранения', 'error');
+            }
+        }
+        
+        function loadMangaContent() {
+            const data = loadData();
+            const mangaList = document.getElementById('mangaList');
+            const activeTab = document.querySelector('#mangaStatusTabs .status-tab.active');
+            const status = activeTab ? activeTab.getAttribute('data-status') : 'all';
+            
+            let mangaToShow = data.manga || [];
+            if (status !== 'all') {
+                mangaToShow = mangaToShow.filter(manga => manga.status === status);
+            }
+            
+            if (mangaToShow.length === 0) {
+                mangaList.innerHTML = `
+                    <div class="empty-reminders">
+                        <div class="icon">📚</div>
+                        <h4>Нет манги</h4>
+                        <p>Добавьте первую мангу в свою коллекцию</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            mangaList.innerHTML = mangaToShow.map(manga => {
+                const progressPercent = manga.chapters > 0 ? Math.round((manga.progress / manga.chapters) * 100) : 0;
+                const statusText = getStatusText(manga.status);
+                const ratingStars = '★'.repeat(manga.rating) + '☆'.repeat(5 - manga.rating);
+                
+                return `
+                    <div class="item-card">
+                        <div class="item-header">
+                            <div class="item-title">${manga.title}</div>
+                            <div class="item-status">${statusText}</div>
+                        </div>
+                        <div class="item-meta">
+                            <span>Главы: ${manga.progress}/${manga.chapters}</span>
+                            <span>Рейтинг: ${ratingStars}</span>
+                        </div>
+                        <div class="item-progress">
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: ${progressPercent}%"></div>
+                            </div>
+                            <div class="progress-text">
+                                <span>Прогресс</span>
+                                <span>${progressPercent}%</span>
+                            </div>
+                        </div>
+                        <div class="item-actions">
+                            <button class="action-btn" onclick="updateMangaProgress('${manga.id}', ${manga.progress + 1})">+1 гл.</button>
+                            <button class="action-btn" onclick="editManga('${manga.id}')">✏️</button>
+                            <button class="action-btn" onclick="deleteManga('${manga.id}')">🗑️</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function updateMangaProgress(id, newProgress) {
+            const data = loadData();
+            const manga = data.manga.find(m => m.id === id);
+            
+            if (manga) {
+                manga.progress = Math.min(newProgress, manga.chapters);
+                manga.lastUpdated = new Date().toISOString();
+                
+                if (manga.progress >= manga.chapters && manga.status !== 'completed') {
+                    manga.status = 'completed';
+                    showNotification('Поздравляем!', `Вы завершили "${manga.title}"!`, 'success');
+                }
+                
+                saveData(data);
+                loadMangaContent();
+                updateGoals();
+            }
+        }
+        
+        // 🔧 СИСТЕМА УВЕДОМЛЕНИЙ (из предыдущей версии)
         let notifications = [];
         let notificationSettings = {
             enabled: true,
@@ -463,7 +1107,6 @@
             frequency: 3
         };
         
-        // Инициализация системы уведомлений
         function initializeNotifications() {
             loadNotificationSettings();
             checkForReminders();
@@ -471,43 +1114,6 @@
             startNotificationChecker();
         }
         
-        // Загрузка настроек уведомлений
-        function loadNotificationSettings() {
-            const data = loadData();
-            if (data.notificationSettings) {
-                notificationSettings = data.notificationSettings;
-            }
-            
-            // Обновляем UI настроек
-            document.getElementById('notificationsEnabled').checked = notificationSettings.enabled;
-            document.getElementById('progressReminders').checked = notificationSettings.progressReminders;
-            document.getElementById('goalNotifications').checked = notificationSettings.goalNotifications;
-            document.getElementById('reminderFrequency').value = notificationSettings.frequency;
-        }
-        
-        // Сохранение настроек уведомлений
-        function saveNotificationSettings() {
-            const data = loadData();
-            notificationSettings.enabled = document.getElementById('notificationsEnabled').checked;
-            notificationSettings.progressReminders = document.getElementById('progressReminders').checked;
-            notificationSettings.goalNotifications = document.getElementById('goalNotifications').checked;
-            notificationSettings.frequency = parseInt(document.getElementById('reminderFrequency').value);
-            
-            data.notificationSettings = notificationSettings;
-            saveData(data);
-            
-            showNotification('Настройки уведомлений сохранены!', 'success');
-        }
-        
-        // Переключение уведомлений
-        function toggleNotifications() {
-            saveNotificationSettings();
-            if (!notificationSettings.enabled) {
-                clearAllNotifications();
-            }
-        }
-        
-        // Показ уведомления
         function showNotification(title, message, type = 'info', duration = 5000) {
             if (!notificationSettings.enabled) return;
             
@@ -522,7 +1128,6 @@
             notifications.push(notification);
             renderNotification(notification);
             
-            // Автоматическое скрытие
             if (duration > 0) {
                 setTimeout(() => {
                     removeNotification(notification.id);
@@ -532,13 +1137,13 @@
             return notification.id;
         }
         
-        // Рендер уведомления
         function renderNotification(notification) {
             const panel = document.getElementById('notificationsPanel');
             const icons = {
                 info: '💡',
                 success: '✅',
                 warning: '⚠️',
+                error: '❌',
                 reminder: '🔔',
                 goal: '🎯'
             };
@@ -558,7 +1163,6 @@
             panel.appendChild(notificationElement);
         }
         
-        // Удаление уведомления
         function removeNotification(id) {
             const notificationElement = document.getElementById(`notification-${id}`);
             if (notificationElement) {
@@ -571,115 +1175,230 @@
             notifications = notifications.filter(n => n.id !== id);
         }
         
-        // Очистка всех уведомлений
-        function clearAllNotifications() {
-            const panel = document.getElementById('notificationsPanel');
-            panel.innerHTML = '';
-            notifications = [];
+        // 🔧 ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
+        function showSection(sectionName) {
+            // Скрываем все секции
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Убираем активный класс со всех табов
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Показываем выбранную секцию
+            document.getElementById(sectionName).classList.add('active');
+            
+            // Активируем соответствующий таб
+            document.querySelectorAll('.tab').forEach(tab => {
+                if (tab.textContent.includes(getTabText(sectionName))) {
+                    tab.classList.add('active');
+                }
+            });
+            
+            // Специальные действия для секций
+            if (sectionName === 'stats') {
+                loadStats();
+            } else if (sectionName === 'reminders') {
+                updateRemindersUI();
+                updateGoals();
+            } else if (sectionName === 'anime') {
+                loadAnimeContent();
+            } else if (sectionName === 'manga') {
+                loadMangaContent();
+            }
         }
         
-        // Проверка напоминаний
-        function checkForReminders() {
-            if (!notificationSettings.enabled) return;
-            
+        function getTabText(sectionName) {
+            const texts = {
+                'anime': 'Аниме',
+                'manga': 'Манга',
+                'stats': 'Статистика',
+                'reminders': 'Напоминания',
+                'settings': 'Настройки'
+            };
+            return texts[sectionName] || '';
+        }
+        
+        function getStatusText(status) {
+            const statuses = {
+                'watching': 'Смотрю',
+                'reading': 'Читаю',
+                'planned': 'В планах',
+                'completed': 'Завершено',
+                'dropped': 'Брошено'
+            };
+            return statuses[status] || status;
+        }
+        
+        function resetForm(type) {
+            if (type === 'anime') {
+                document.getElementById('animeTitle').value = '';
+                document.getElementById('animeProgress').value = '0';
+                currentAnimeRating = 0;
+                document.querySelectorAll('#animeRating .star').forEach(star => {
+                    star.classList.remove('active');
+                });
+            } else if (type === 'manga') {
+                document.getElementById('mangaTitle').value = '';
+                document.getElementById('mangaProgress').value = '0';
+                currentMangaRating = 0;
+                document.querySelectorAll('#mangaRating .star').forEach(star => {
+                    star.classList.remove('active');
+                });
+            }
+        }
+        
+        // 🔧 СТАТИСТИКА
+        function loadStats() {
             const data = loadData();
-            const now = new Date();
-            const lastReminderCheck = data.lastReminderCheck ? new Date(data.lastReminderCheck) : new Date(0);
-            const daysSinceLastCheck = Math.floor((now - lastReminderCheck) / (1000 * 60 * 60 * 24));
+            const generalStats = document.getElementById('generalStats');
             
-            // Проверяем только если прошло достаточно времени
-            if (daysSinceLastCheck >= notificationSettings.frequency) {
-                checkProgressReminders(data);
-                checkGoalsProgress(data);
-                data.lastReminderCheck = now.toISOString();
-                saveData(data);
+            const animeCount = data.anime ? data.anime.length : 0;
+            const mangaCount = data.manga ? data.manga.length : 0;
+            const completedAnime = data.anime ? data.anime.filter(a => a.status === 'completed').length : 0;
+            const completedManga = data.manga ? data.manga.filter(m => m.status === 'completed').length : 0;
+            
+            generalStats.innerHTML = `
+                <div class="item-card">
+                    <div class="item-meta">
+                        <span>Всего аниме: ${animeCount}</span>
+                        <span>Завершено: ${completedAnime}</span>
+                    </div>
+                </div>
+                <div class="item-card">
+                    <div class="item-meta">
+                        <span>Всего манги: ${mangaCount}</span>
+                        <span>Завершено: ${completedManga}</span>
+                    </div>
+                </div>
+            `;
+            
+            // Простой график
+            const ctx = document.getElementById('statsChart').getContext('2d');
+            if (window.statsChart) {
+                window.statsChart.destroy();
             }
             
-            updateRemindersUI();
-        }
-        
-        // Проверка напоминаний о прогрессе
-        function checkProgressReminders(data) {
-            if (!notificationSettings.progressReminders) return;
-            
-            const now = new Date();
-            const inactiveItems = [];
-            
-            // Проверяем аниме
-            if (data.anime) {
-                data.anime.forEach(anime => {
-                    if (anime.status === 'watching') {
-                        const lastUpdate = anime.lastUpdated ? new Date(anime.lastUpdated) : new Date(anime.createdAt);
-                        const daysInactive = Math.floor((now - lastUpdate) / (1000 * 60 * 60 * 24));
-                        
-                        if (daysInactive >= 7) {
-                            inactiveItems.push({
-                                type: 'anime',
-                                item: anime,
-                                daysInactive: daysInactive
-                            });
+            window.statsChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Аниме', 'Манга'],
+                    datasets: [{
+                        label: 'Всего',
+                        data: [animeCount, mangaCount],
+                        backgroundColor: 'rgba(102, 126, 234, 0.6)'
+                    }, {
+                        label: 'Завершено',
+                        data: [completedAnime, completedManga],
+                        backgroundColor: 'rgba(118, 75, 162, 0.6)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: 'white'
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: 'white'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: 'white'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            }
                         }
                     }
-                });
-            }
-            
-            // Проверяем мангу
-            if (data.manga) {
-                data.manga.forEach(manga => {
-                    if (manga.status === 'reading') {
-                        const lastUpdate = manga.lastUpdated ? new Date(manga.lastUpdated) : new Date(manga.createdAt);
-                        const daysInactive = Math.floor((now - lastUpdate) / (1000 * 60 * 60 * 24));
-                        
-                        if (daysInactive >= 7) {
-                            inactiveItems.push({
-                                type: 'manga',
-                                item: manga,
-                                daysInactive: daysInactive
-                            });
-                        }
-                    }
-                });
-            }
-            
-            // Показываем уведомления
-            inactiveItems.forEach(inactiveItem => {
-                const typeText = inactiveItem.type === 'anime' ? 'аниме' : 'мангу';
-                showNotification(
-                    '📺 Напоминание о просмотре',
-                    `Вы не обновляли прогресс "${inactiveItem.item.title}" уже ${inactiveItem.daysInactive} дней. Хотите продолжить?`,
-                    'reminder',
-                    10000
-                );
+                }
             });
         }
         
-        // Проверка прогресса целей
-        function checkGoalsProgress(data) {
-            if (!notificationSettings.goalNotifications) return;
+        // 🔧 ЦЕЛИ И НАПОМИНАНИЯ
+        function updateGoals() {
+            const data = loadData();
+            const now = new Date();
+            const startOfWeek = new Date(now);
+            startOfWeek.setDate(now.getDate() - now.getDay());
+            startOfWeek.setHours(0, 0, 0, 0);
             
-            const weeklyAnimeGoal = 5; // 5 эпизодов в неделю
-            const weeklyMangaGoal = 3; // 3 главы в неделю
+            let weeklyAnimeProgress = 0;
+            let weeklyMangaProgress = 0;
             
-            // Здесь можно добавить логику проверки целей
-            // и показывать уведомления о прогрессе
+            if (data.anime) {
+                data.anime.forEach(anime => {
+                    if (anime.lastUpdated && new Date(anime.lastUpdated) >= startOfWeek) {
+                        weeklyAnimeProgress += 1;
+                    }
+                });
+            }
             
-            showNotification(
-                '🎯 Прогресс целей',
-                'Проверьте ваш прогресс по целям на этой неделе!',
-                'goal',
-                8000
-            );
+            if (data.manga) {
+                data.manga.forEach(manga => {
+                    if (manga.lastUpdated && new Date(manga.lastUpdated) >= startOfWeek) {
+                        weeklyMangaProgress += 1;
+                    }
+                });
+            }
+            
+            const weeklyAnimeGoal = 5;
+            const weeklyMangaGoal = 3;
+            
+            const animePercentage = Math.min((weeklyAnimeProgress / weeklyAnimeGoal) * 100, 100);
+            const mangaPercentage = Math.min((weeklyMangaProgress / weeklyMangaGoal) * 100, 100);
+            
+            const goalsList = document.getElementById('goalsList');
+            goalsList.innerHTML = `
+                <div class="goal-card">
+                    <div class="goal-header">
+                        <div class="goal-title">📅 Еженедельный просмотр</div>
+                        <div class="goal-progress">${weeklyAnimeProgress}/${weeklyAnimeGoal} эпизодов</div>
+                    </div>
+                    <div class="goal-bar">
+                        <div class="goal-fill" style="width: ${animePercentage}%"></div>
+                    </div>
+                    <div class="goal-stats">
+                        <span>На этой неделе</span>
+                        <span>${Math.round(animePercentage)}%</span>
+                    </div>
+                </div>
+                
+                <div class="goal-card">
+                    <div class="goal-header">
+                        <div class="goal-title">📚 Еженедельное чтение</div>
+                        <div class="goal-progress">${weeklyMangaProgress}/${weeklyMangaGoal} глав</div>
+                    </div>
+                    <div class="goal-bar">
+                        <div class="goal-fill" style="width: ${mangaPercentage}%"></div>
+                    </div>
+                    <div class="goal-stats">
+                        <span>На этой неделе</span>
+                        <span>${Math.round(mangaPercentage)}%</span>
+                    </div>
+                </div>
+            `;
         }
         
-        // Обновление интерфейса напоминаний
         function updateRemindersUI() {
             const container = document.getElementById('activeReminders');
             const data = loadData();
-            
-            const activeItems = [];
             const now = new Date();
             
-            // Собираем активные напоминания
+            const activeItems = [];
+            
             if (data.anime) {
                 data.anime.forEach(anime => {
                     if (anime.status === 'watching') {
@@ -741,7 +1460,7 @@
                             </div>
                         </div>
                         <div class="reminder-actions">
-                            <button class="reminder-btn" onclick="updateProgress('${item.type}', '${item.item.id}', ${(item.item.progress || 0) + 1})">+1</button>
+                            <button class="reminder-btn" onclick="update${item.type === 'anime' ? 'Anime' : 'Manga'}Progress('${item.item.id}', ${(item.item.progress || 0) + 1})">+1</button>
                             <button class="reminder-btn primary" onclick="showSection('${item.type}')">Перейти</button>
                         </div>
                     </div>
@@ -749,225 +1468,85 @@
             }).join('');
         }
         
-        // Обновление целей
-        function updateGoals() {
+        // 🔧 УПРАВЛЕНИЕ ДАННЫМИ
+        function exportData() {
             const data = loadData();
-            const now = new Date();
-            const startOfWeek = new Date(now);
-            startOfWeek.setDate(now.getDate() - now.getDay());
-            startOfWeek.setHours(0, 0, 0, 0);
+            const dataStr = JSON.stringify(data, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
             
-            let weeklyAnimeProgress = 0;
-            let weeklyMangaProgress = 0;
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `animanga-backup-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
             
-            // Считаем прогресс за неделю
-            if (data.anime) {
-                data.anime.forEach(anime => {
-                    if (anime.lastUpdated && new Date(anime.lastUpdated) >= startOfWeek) {
-                        // Здесь можно добавить более сложную логику подсчета прогресса
-                        weeklyAnimeProgress += 1; // Упрощенный подсчет
-                    }
-                });
-            }
+            showNotification('Успех', 'Данные экспортированы', 'success');
+        }
+        
+        function importData() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
             
-            if (data.manga) {
-                data.manga.forEach(manga => {
-                    if (manga.lastUpdated && new Date(manga.lastUpdated) >= startOfWeek) {
-                        weeklyMangaProgress += 1; // Упрощенный подсчет
-                    }
-                });
-            }
-            
-            const weeklyAnimeGoal = 5;
-            const weeklyMangaGoal = 3;
-            
-            const animePercentage = Math.min((weeklyAnimeProgress / weeklyAnimeGoal) * 100, 100);
-            const mangaPercentage = Math.min((weeklyMangaProgress / weeklyMangaGoal) * 100, 100);
-            
-            // Обновляем UI целей
-            const goalsList = document.getElementById('goalsList');
-            goalsList.innerHTML = `
-                <div class="goal-card">
-                    <div class="goal-header">
-                        <div class="goal-title">📅 Еженедельный просмотр</div>
-                        <div class="goal-progress">${weeklyAnimeProgress}/${weeklyAnimeGoal} эпизодов</div>
-                    </div>
-                    <div class="goal-bar">
-                        <div class="goal-fill" style="width: ${animePercentage}%"></div>
-                    </div>
-                    <div class="goal-stats">
-                        <span>На этой неделе</span>
-                        <span>${Math.round(animePercentage)}%</span>
-                    </div>
-                </div>
+            input.onchange = function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
                 
-                <div class="goal-card">
-                    <div class="goal-header">
-                        <div class="goal-title">📚 Еженедельное чтение</div>
-                        <div class="goal-progress">${weeklyMangaProgress}/${weeklyMangaGoal} глав</div>
-                    </div>
-                    <div class="goal-bar">
-                        <div class="goal-fill" style="width: ${mangaPercentage}%"></div>
-                    </div>
-                    <div class="goal-stats">
-                        <span>На этой неделе</span>
-                        <span>${Math.round(mangaPercentage)}%</span>
-                    </div>
-                </div>
-            `;
-        }
-        
-        // Запуск проверки уведомлений
-        function startNotificationChecker() {
-            // Проверяем каждые 30 минут
-            setInterval(() => {
-                checkForReminders();
-                updateGoals();
-            }, 30 * 60 * 1000);
-        }
-        
-        // 🔧 ОБНОВЛЕНИЕ СУЩЕСТВУЮЩИХ ФУНКЦИЙ
-        
-        // Обновляем функцию добавления аниме/манги для отслеживания времени
-        function addAnime() {
-            const title = document.getElementById('animeTitle').value.trim();
-            const cover = document.getElementById('animeCover').value.trim();
-            const status = document.getElementById('animeStatus').value;
-            const episodes = parseInt(document.getElementById('animeEpisodes').value) || 12;
-            const progress = parseInt(document.getElementById('animeProgress').value) || 0;
-            const tags = parseTags(document.getElementById('animeTags').value);
-            const rating = currentAnimeRating;
-            
-            if (!title) {
-                showNotification('Введите название аниме', 'error');
-                return;
-            }
-            
-            const data = loadData();
-            const newAnime = {
-                id: Date.now().toString(),
-                title,
-                cover,
-                status,
-                episodes,
-                progress,
-                tags,
-                rating,
-                createdAt: new Date().toISOString(),
-                lastUpdated: new Date().toISOString()
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        if (confirm('Заменить текущие данные импортированными?')) {
+                            const userId = getUserId();
+                            const key = `animanga_data_${userId}`;
+                            localStorage.setItem(key, JSON.stringify(data));
+                            showNotification('Успех', 'Данные импортированы', 'success');
+                            
+                            // Перезагружаем контент
+                            loadAnimeContent();
+                            loadMangaContent();
+                        }
+                    } catch (error) {
+                        showNotification('Ошибка', 'Неверный формат файла', 'error');
+                    }
+                };
+                reader.readAsText(file);
             };
             
-            data.anime = data.anime || [];
-            data.anime.push(newAnime);
-            
-            if (saveData(data)) {
-                showNotification('Аниме добавлено!', 'success');
-                resetForm('anime');
+            input.click();
+        }
+        
+        function clearData() {
+            if (confirm('Вы уверены? Это удалит все ваши данные.')) {
+                const userId = getUserId();
+                const key = `animanga_data_${userId}`;
+                localStorage.removeItem(key);
+                showNotification('Успех', 'Все данные очищены', 'success');
+                
+                // Перезагружаем контент
                 loadAnimeContent();
-                
-                // Показываем уведомление о цели
-                if (notificationSettings.goalNotifications) {
-                    showNotification(
-                        '🎯 Цель обновлена',
-                        'Новое аниме добавлено в вашу коллекцию!',
-                        'success'
-                    );
-                }
-            } else {
-                showNotification('Ошибка сохранения', 'error');
-            }
-        }
-        
-        // Аналогично обновляем addManga()
-        function addManga() {
-            // ... существующий код ...
-            // Добавляем lastUpdated: new Date().toISOString()
-            // И уведомление о цели
-        }
-        
-        // Обновляем функцию обновления прогресса
-        function updateProgress(type, id, newProgress) {
-            const data = loadData();
-            const items = type === 'anime' ? data.anime : data.manga;
-            const item = items.find(item => item.id === id);
-            
-            if (item) {
-                const total = type === 'anime' ? item.episodes : item.chapters;
-                const oldProgress = item.progress || 0;
-                item.progress = validateProgress(newProgress, total);
-                item.lastUpdated = new Date().toISOString();
-                
-                // Автоматическое обновление статуса при завершении
-                if (item.progress >= total && item.status !== 'completed') {
-                    item.status = 'completed';
-                    showNotification(
-                        '🎉 Поздравляем!',
-                        `Вы завершили "${item.title}"!`,
-                        'success',
-                        8000
-                    );
-                }
-                
-                // Уведомление о значительном прогрессе
-                if (item.progress > oldProgress && notificationSettings.goalNotifications) {
-                    const progressMade = item.progress - oldProgress;
-                    if (progressMade >= 3) {
-                        showNotification(
-                            '🚀 Отличный прогресс!',
-                            `Вы прошли ${progressMade} ${type === 'anime' ? 'эпизодов' : 'глав'} в "${item.title}"`,
-                            'success'
-                        );
-                    }
-                }
-                
-                saveData(data);
-                if (type === 'anime') {
-                    loadAnimeContent();
-                } else {
-                    loadMangaContent();
-                }
-                
-                // Обновляем цели
-                updateGoals();
-            }
-        }
-        
-        // Обновляем функцию показа секций
-        function showSection(sectionName) {
-            // ... существующий код ...
-            
-            // Специальные действия для секций
-            if (sectionName === 'stats') {
-                if (typeof loadStats === 'function') loadStats();
-            } else if (sectionName === 'settings') {
-                updateBackupInfo();
-                updateCloudStatus();
-            } else if (sectionName === 'reminders') {
-                updateRemindersUI();
-                updateGoals();
-            } else if (sectionName === 'anime') {
-                loadAnimeContent();
-            } else if (sectionName === 'manga') {
                 loadMangaContent();
+                loadStats();
             }
         }
         
         // 🔧 ИНИЦИАЛИЗАЦИЯ
-        
         document.addEventListener('DOMContentLoaded', function() {
-            // Существующая инициализация
+            initTelegramApp();
             initializeRatingSystem();
-            initializeTagsSystem();
             initializeStatusTabs();
-            loadAnimeContent();
-            loadMangaContent();
-            updateBackupInfo();
-            updateCloudStatus();
-            
-            // Новая инициализация
             initializeNotifications();
             
-            // Показываем приветственное уведомление
+            loadAnimeContent();
+            loadMangaContent();
+            loadStats();
+            updateGoals();
+            updateRemindersUI();
+            
+            // Приветственное уведомление
             setTimeout(() => {
                 showNotification(
                     '👋 Добро пожаловать!',
@@ -977,30 +1556,6 @@
                 );
             }, 1000);
         });
-
-        // 🔧 ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ НОВОЙ СЕКЦИИ
-        
-        function completeReminder(type, id) {
-            updateProgress(type, id, 1);
-            updateRemindersUI();
-        }
-        
-        function skipReminder(type, id) {
-            const data = loadData();
-            const items = type === 'anime' ? data.anime : data.manga;
-            const item = items.find(item => item.id === id);
-            
-            if (item) {
-                item.lastUpdated = new Date().toISOString();
-                saveData(data);
-                updateRemindersUI();
-                
-                showNotification('Напоминание отложено', 'Мы напомним снова через несколько дней', 'info');
-            }
-        }
-
-        // 🔧 ОСТАЛЬНЫЕ СУЩЕСТВУЮЩИЕ ФУНКЦИИ
-        // ... все остальные функции из предыдущей версии остаются без изменений
     </script>
 </body>
-</html>
+    </html>
