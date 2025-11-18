@@ -8,6 +8,18 @@
     <meta name="theme-color" content="#1a1a2e">
     <meta name="description" content="Track your anime and manga progress">
     
+    <link rel="manifest" href="manifest.json">
+    <script>
+        // Регистрация Service Worker для работы оффлайн и установки
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('Service Worker registered'))
+                    .catch(err => console.error('Service Worker error:', err));
+            });
+        }
+    </script>
+    
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
@@ -16,7 +28,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
         :root {
-            /* Темная тема по умолчанию (для предотвращения белых вспышек) */
+            /* Темная тема по умолчанию */
             --bg-color: #0f0f23;
             --card-color: #1a1a2e;
             --text-color: #ffffff;
@@ -34,7 +46,7 @@
             padding: 15px;
             transition: background 0.3s ease, color 0.3s ease;
             line-height: 1.5;
-            overflow-x: hidden; /* Блокируем горизонтальный скролл */
+            overflow-x: hidden;
         }
 
         /* Светлая тема */
@@ -109,7 +121,6 @@
 
         /* Формы */
         .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 8px; font-size: 13px; font-weight: 600; opacity: 0.9; }
         .form-control {
             width: 100%;
             padding: 12px;
@@ -117,7 +128,7 @@
             border: 2px solid var(--border-color);
             border-radius: 10px;
             color: var(--text-color);
-            font-size: 16px; /* Чтобы iOS не зумил */
+            font-size: 16px;
             transition: 0.3s;
         }
         .form-control:focus { outline: none; border-color: var(--accent-color); }
@@ -133,7 +144,6 @@
             font-size: 16px;
             margin-top: 10px;
             box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-            active: transform: scale(0.98);
         }
         .btn-secondary { background: var(--border-color); color: var(--text-color); box-shadow: none; }
         .btn-danger { background: #ff4757; margin-top: 20px; }
@@ -150,14 +160,6 @@
             gap: 10px;
         }
         .item-main { display: flex; gap: 12px; }
-        .item-cover {
-            width: 70px;
-            height: 100px;
-            border-radius: 8px;
-            object-fit: cover;
-            background: var(--border-color);
-            flex-shrink: 0;
-        }
         .item-info { flex: 1; min-width: 0; }
         .item-title { font-weight: 700; font-size: 16px; margin-bottom: 5px; line-height: 1.3; }
         .item-meta { font-size: 13px; opacity: 0.7; margin-bottom: 5px; }
@@ -172,12 +174,6 @@
         .progress-fill { height: 100%; background: var(--accent-color); transition: width 0.3s; }
 
         /* Кнопки действий */
-        .actions { display: flex; gap: 8px; margin-top: 5px; }
-        .act-btn { flex: 1; padding: 8px; border-radius: 8px; border: none; font-weight: 600; font-size: 13px; }
-        .btn-add { background: var(--accent-color); color: white; }
-        .btn-edit { background: var(--border-color); color: var(--text-color); }
-        
-        /* Быстрый прогресс */
         .quick-progress { display: flex; gap: 5px; margin-top: 8px; overflow-x: auto; padding-bottom: 5px; }
         .qp-btn {
             padding: 6px 12px;
@@ -251,9 +247,9 @@
             padding: 15px 0;
             border-bottom: 1px solid var(--border-color);
         }
-
-        /* PWA Установка - Скрыто по умолчанию */
-        #pwa-install-btn { display: none; }
+        
+        /* PWA кнопка (скрыта по умолчанию) */
+        #pwa-install-row { display: none; }
     </style>
 </head>
 <body>
@@ -290,12 +286,8 @@
                 <button class="btn" onclick="addItem('anime')">➕ Добавить</button>
             </div>
 
-            <div class="status-scroll" id="animeFilters">
-                </div>
-            
-            <div id="animeList">
-                <div class="loading"><div class="spinner"></div>Загрузка...</div>
-            </div>
+            <div class="status-scroll" id="animeFilters"></div>
+            <div id="animeList"><div class="loading"><div class="spinner"></div>Загрузка...</div></div>
         </div>
 
         <div id="manga" class="section">
@@ -312,12 +304,8 @@
                 <button class="btn" onclick="addItem('manga')">➕ Добавить</button>
             </div>
 
-            <div class="status-scroll" id="mangaFilters">
-                </div>
-
-            <div id="mangaList">
-                <div class="loading"><div class="spinner"></div>Загрузка...</div>
-            </div>
+            <div class="status-scroll" id="mangaFilters"></div>
+            <div id="mangaList"><div class="loading"><div class="spinner"></div>Загрузка...</div></div>
         </div>
 
         <div id="stats" class="section">
@@ -351,18 +339,17 @@
                     <input type="checkbox" id="langToggle" onchange="toggleLang()">
                 </div>
 
-                <div class="settings-row" id="pwa-install-row" style="display:none;">
-                    <span>📱 Установить приложение</span>
-                    <button class="qp-btn" onclick="installPWA()">Install</button>
+                <div class="settings-row" id="pwa-install-row">
+                    <span>📱 Приложение</span>
+                    <button class="qp-btn" onclick="installPWA()">Скачать</button>
                 </div>
 
                 <div style="margin-top: 20px;">
-                    <button class="btn btn-secondary" onclick="exportData()">📥 Скачать резервную копию</button>
+                    <button class="btn btn-secondary" onclick="exportData()">📥 Скачать копию данных</button>
                     <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()" style="margin-top:10px">📤 Загрузить из файла</button>
                     <input type="file" id="importFile" style="display:none" onchange="importData(this)">
                     
                     <button class="btn btn-danger" onclick="clearData()">🗑️ Удалить все данные</button>
-                    
                     <button class="btn btn-secondary" onclick="window.location.reload()" style="margin-top: 20px; opacity: 0.5;">🔄 Перезагрузить App</button>
                 </div>
             </div>
@@ -370,29 +357,19 @@
     </div>
 
     <script>
-        // 🔧 ИНИЦИАЛИЗАЦИЯ TELEGRAM
+        // --- ИНИЦИАЛИЗАЦИЯ ---
         let tg = window.Telegram.WebApp;
-        
-        // Принудительно расширяем и сообщаем о готовности
         tg.expand();
         if (tg.ready) tg.ready();
 
-        // Установка цветов Telegram
         document.documentElement.style.setProperty('--bg-color', tg.backgroundColor || '#0f0f23');
         document.documentElement.style.setProperty('--card-color', tg.secondaryBackgroundColor || '#1a1a2e');
         document.documentElement.style.setProperty('--text-color', tg.textColor || '#ffffff');
 
-        // ГЛОБАЛЬНЫЕ ДАННЫЕ
         const DB_KEY = 'animanga_db_' + (tg.initDataUnsafe?.user?.id || 'local_user');
-        let appData = {
-            anime: [],
-            manga: [],
-            settings: { theme: 'dark', lang: 'ru' }
-        };
-        
+        let appData = { anime: [], manga: [], settings: { theme: 'dark', lang: 'ru' } };
         let currentFilter = { anime: 'all', manga: 'all' };
 
-        // ТЕКСТЫ
         const i18n = {
             ru: {
                 anime: 'Аниме', manga: 'Манга', stats: 'Инфо', settings: 'Настройки',
@@ -408,32 +385,30 @@
             }
         };
 
-        // ЗАГРУЗКА ПРИЛОЖЕНИЯ
+        // --- ЗАПУСК ---
         document.addEventListener('DOMContentLoaded', () => {
             loadData();
             renderAll();
-            checkPWA(); // Проверка возможности установки
+            checkPWA();
         });
 
-        // --- ОСНОВНЫЕ ФУНКЦИИ ---
-
+        // --- ФУНКЦИИ ---
         function loadData() {
             const raw = localStorage.getItem(DB_KEY);
             if (raw) {
                 try {
                     appData = JSON.parse(raw);
-                    // Миграция старых данных если нужно
                     if (!appData.anime) appData.anime = [];
                     if (!appData.manga) appData.manga = [];
                     if (!appData.settings) appData.settings = { theme: 'dark', lang: 'ru' };
-                } catch (e) { console.error('Data Error', e); }
+                } catch (e) { console.error(e); }
             }
             applySettings();
         }
 
         function saveData() {
             localStorage.setItem(DB_KEY, JSON.stringify(appData));
-            renderStats(); // Обновляем статистику при любом сохранении
+            renderStats();
         }
 
         function addItem(type) {
@@ -444,22 +419,18 @@
             const title = input.value.trim();
             if (!title) return showNotify('❌ Введите название');
 
-            const newItem = {
+            appData[type].unshift({
                 id: Date.now(),
                 title: title,
                 total: parseInt(totalInput.value) || 0,
                 progress: 0,
                 status: statusSelect.value,
                 rating: 0
-            };
+            });
 
-            appData[type].unshift(newItem); // Добавляем в начало
             saveData();
-            
-            // Очистка полей
             input.value = '';
             totalInput.value = '';
-            
             renderList(type);
             showNotify('✅ Добавлено: ' + title);
         }
@@ -475,14 +446,13 @@
         function updateProgress(type, id, change) {
             const item = appData[type].find(i => i.id === id);
             if (item) {
-                item.progress += change;
-                if (item.progress < 0) item.progress = 0;
-                if (item.total > 0 && item.progress >= item.total) {
+                item.progress = Math.max(0, item.progress + change);
+                if (item.total > 0 && item.progress >= item.total && item.status !== 'completed') {
                     item.status = 'completed';
-                    showNotify('🎉 Поздравляю с завершением!');
+                    showNotify('🎉 Завершено!');
                 }
                 saveData();
-                renderList(type); // Перерисовываем только список
+                renderList(type);
             }
         }
 
@@ -495,8 +465,7 @@
             }
         }
 
-        // --- ОТРИСОВКА ИНТЕРФЕЙСА ---
-
+        // --- ОТРИСОВКА ---
         function renderAll() {
             renderFilters('anime');
             renderFilters('manga');
@@ -508,8 +477,6 @@
         function renderFilters(type) {
             const container = document.getElementById(type + 'Filters');
             const statuses = ['all', 'watching', 'reading', 'planned', 'completed', 'dropped'];
-            
-            // Убираем watching для манги и reading для аниме
             const validStatuses = statuses.filter(s => {
                 if (type === 'anime' && s === 'reading') return false;
                 if (type === 'manga' && s === 'watching') return false;
@@ -519,11 +486,7 @@
             container.innerHTML = validStatuses.map(status => {
                 const label = getStatusLabel(status);
                 const activeClass = currentFilter[type] === status ? 'active' : '';
-                // Считаем количество
-                let count = 0;
-                if (status === 'all') count = appData[type].length;
-                else count = appData[type].filter(i => i.status === status).length;
-
+                let count = status === 'all' ? appData[type].length : appData[type].filter(i => i.status === status).length;
                 return `<div class="status-chip ${activeClass}" onclick="setFilter('${type}', '${status}')">${label} (${count})</div>`;
             }).join('');
         }
@@ -536,10 +499,7 @@
 
         function renderList(type) {
             const listEl = document.getElementById(type + 'List');
-            const items = appData[type].filter(item => {
-                if (currentFilter[type] === 'all') return true;
-                return item.status === currentFilter[type];
-            });
+            const items = appData[type].filter(item => currentFilter[type] === 'all' || item.status === currentFilter[type]);
 
             if (items.length === 0) {
                 listEl.innerHTML = `<div style="text-align:center; opacity:0.5; padding:20px;">${getText('empty')}</div>`;
@@ -550,12 +510,8 @@
                 const percent = item.total > 0 ? Math.min((item.progress / item.total) * 100, 100) : 0;
                 const statusLabel = getStatusLabel(item.status);
                 const unit = type === 'anime' ? getText('ep') : getText('ch');
-                
-                // Генерация звезд
                 let starsHtml = '';
-                for(let i=1; i<=5; i++) {
-                    starsHtml += `<span class="${i <= item.rating ? 'active' : ''}" onclick="updateRating('${type}', ${item.id}, ${i})">★</span>`;
-                }
+                for(let i=1; i<=5; i++) starsHtml += `<span class="${i <= item.rating ? 'active' : ''}" onclick="updateRating('${type}', ${item.id}, ${i})">★</span>`;
 
                 return `
                 <div class="item-card">
@@ -563,17 +519,14 @@
                         <div class="item-info">
                             <div class="item-title">${item.title}</div>
                             <div class="item-meta">${statusLabel} • ${item.progress} / ${item.total || '?'} ${unit}</div>
-                            <div class="progress-container">
-                                <div class="progress-fill" style="width: ${percent}%"></div>
-                            </div>
+                            <div class="progress-container"><div class="progress-fill" style="width: ${percent}%"></div></div>
                         </div>
                         <div class="rating rating-input">${starsHtml}</div>
                     </div>
-                    
                     <div class="quick-progress">
                         <button class="qp-btn" onclick="updateProgress('${type}', ${item.id}, 1)">+1</button>
                         <button class="qp-btn" onclick="updateProgress('${type}', ${item.id}, 5)">+5</button>
-                         <button class="qp-btn" onclick="updateProgress('${type}', ${item.id}, -1)">-1</button>
+                        <button class="qp-btn" onclick="updateProgress('${type}', ${item.id}, -1)">-1</button>
                         <button class="qp-btn" style="border-color:#ff4757; color:#ff4757" onclick="deleteItem('${type}', ${item.id})">🗑️</button>
                     </div>
                 </div>`;
@@ -583,10 +536,7 @@
         function renderStats() {
             document.getElementById('statAnimeCount').innerText = appData.anime.length;
             document.getElementById('statMangaCount').innerText = appData.manga.length;
-
             const ctx = document.getElementById('statsChart').getContext('2d');
-            
-            // Данные для графика
             const s = { watch: 0, plan: 0, done: 0, drop: 0 };
             [...appData.anime, ...appData.manga].forEach(i => {
                 if (i.status === 'watching' || i.status === 'reading') s.watch++;
@@ -606,26 +556,17 @@
                         borderWidth: 0
                     }]
                 },
-                options: {
-                    responsive: true,
-                    plugins: { legend: { position: 'bottom', labels: { color: getComputedStyle(document.body).getPropertyValue('--text-color') } } }
-                }
+                options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { color: getComputedStyle(document.body).getPropertyValue('--text-color') } } } }
             });
         }
 
-        // --- УТИЛИТЫ ---
-
+        // --- HELPERS ---
         function switchTab(tabId) {
             document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
-            
             document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
-            // Ищем кнопку, которая вызывает этот таб (просто по тексту или индексу сложно, сделаем проще)
-            const buttons = document.querySelectorAll('.tab');
-            if(tabId === 'anime') buttons[0].classList.add('active');
-            if(tabId === 'manga') buttons[1].classList.add('active');
-            if(tabId === 'stats') buttons[2].classList.add('active');
-            if(tabId === 'settings') buttons[3].classList.add('active');
+            const idx = ['anime', 'manga', 'stats', 'settings'].indexOf(tabId);
+            if(idx !== -1) document.querySelectorAll('.tab')[idx].classList.add('active');
         }
 
         function showNotify(msg) {
@@ -635,59 +576,34 @@
             setTimeout(() => n.classList.remove('show'), 3000);
         }
 
-        function getText(key) {
-            return i18n[appData.settings.lang][key] || key;
-        }
-
+        function getText(key) { return i18n[appData.settings.lang][key] || key; }
         function getStatusLabel(status) {
-            const map = {
-                'all': 'Все', 'watching': getText('watch'), 'reading': getText('watch'),
-                'planned': getText('plan'), 'completed': getText('done'), 'dropped': getText('drop')
-            };
+            const map = { 'all': 'Все', 'watching': getText('watch'), 'reading': getText('watch'), 'planned': getText('plan'), 'completed': getText('done'), 'dropped': getText('drop') };
             return map[status] || status;
         }
-
-        // --- НАСТРОЙКИ ---
 
         function applySettings() {
             const s = appData.settings;
             document.body.className = s.theme === 'light' ? 'light-theme' : '';
             document.getElementById('themeToggle').checked = s.theme === 'dark';
             document.getElementById('langToggle').checked = s.lang === 'en';
-            
-            // Перерисовка текстов
             const tabs = document.querySelectorAll('.tab');
             tabs[0].innerText = '🎬 ' + getText('anime');
             tabs[1].innerText = '📚 ' + getText('manga');
             tabs[2].innerText = '📊 ' + getText('stats');
             tabs[3].innerText = '⚙️ ' + getText('settings');
-            
-            renderFilters('anime');
-            renderFilters('manga');
-            renderStats();
+            renderFilters('anime'); renderFilters('manga'); renderStats();
         }
 
-        function toggleTheme() {
-            appData.settings.theme = document.getElementById('themeToggle').checked ? 'dark' : 'light';
-            saveData();
-            applySettings();
-        }
-
-        function toggleLang() {
-            appData.settings.lang = document.getElementById('langToggle').checked ? 'en' : 'ru';
-            saveData();
-            applySettings();
-        }
+        function toggleTheme() { appData.settings.theme = document.getElementById('themeToggle').checked ? 'dark' : 'light'; saveData(); applySettings(); }
+        function toggleLang() { appData.settings.lang = document.getElementById('langToggle').checked ? 'en' : 'ru'; saveData(); applySettings(); }
 
         function exportData() {
-            const dataStr = JSON.stringify(appData);
-            const blob = new Blob([dataStr], {type: "application/json"});
-            const url = URL.createObjectURL(blob);
+            const blob = new Blob([JSON.stringify(appData)], {type: "application/json"});
             const a = document.createElement('a');
-            a.href = url;
+            a.href = URL.createObjectURL(blob);
             a.download = "animanga_backup.json";
-            document.body.appendChild(a);
-            a.click();
+            document.body.appendChild(a); a.click();
             showNotify('📥 Файл скачивается...');
         }
 
@@ -698,28 +614,22 @@
             reader.onload = function(e) {
                 try {
                     appData = JSON.parse(e.target.result);
-                    saveData();
-                    applySettings();
-                    renderAll();
+                    saveData(); applySettings(); renderAll();
                     showNotify('✅ ' + getText('imported'));
-                } catch(err) {
-                    showNotify('❌ Ошибка файла');
-                }
+                } catch(err) { showNotify('❌ Ошибка файла'); }
             };
             reader.readAsText(file);
         }
 
         function clearData() {
-            if(confirm('Точно удалить ВСЕ данные? Это нельзя отменить.')) {
+            if(confirm('Точно удалить ВСЕ данные?')) {
                 localStorage.removeItem(DB_KEY);
                 appData = { anime: [], manga: [], settings: { theme: 'dark', lang: 'ru' } };
-                saveData();
-                renderAll();
-                showNotify('🗑️ Данные очищены');
+                saveData(); renderAll(); showNotify('🗑️ Данные очищены');
             }
         }
 
-        // --- PWA ФУНКЦИОНАЛ (Упрощенный) ---
+        // --- PWA Logic ---
         let deferredPrompt;
         function checkPWA() {
             window.addEventListener('beforeinstallprompt', (e) => {
@@ -733,14 +643,11 @@
             if (deferredPrompt) {
                 deferredPrompt.prompt();
                 deferredPrompt.userChoice.then((choiceResult) => {
-                    if (choiceResult.outcome === 'accepted') {
-                        console.log('User accepted the A2HS prompt');
-                    }
                     deferredPrompt = null;
                     document.getElementById('pwa-install-row').style.display = 'none';
                 });
             } else {
-                alert('Установка не поддерживается или приложение уже установлено. Для iOS нажмите "Поделиться" -> "На экран Домой".');
+                alert('Чтобы установить на iPhone: нажмите "Поделиться" -> "На экран Домой".');
             }
         }
     </script>
