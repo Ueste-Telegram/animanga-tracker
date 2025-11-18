@@ -5,2841 +5,744 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AniManga Tracker</title>
     
-    <!-- PWA мета-теги -->
-    <meta name="theme-color" content="#667eea">
+    <meta name="theme-color" content="#1a1a2e">
     <meta name="description" content="Track your anime and manga progress">
-    <link rel="manifest" href="manifest.json">
-    <link rel="icon" type="image/png" href="icon-192x192.png">
-    <link rel="apple-touch-icon" href="icon-192x192.png">
     
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
     <style>
-        /* 🔧 БАЗОВЫЕ СТИЛИ И СБРОС */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
+        /* 🔧 БАЗОВЫЕ СТИЛИ */
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
         :root {
-            /* Светлая тема */
-            --light-bg: #ffffff;
-            --light-card: #f8f9fa;
-            --light-text: #2d3748;
-            --light-border: #e2e8f0;
-            --light-accent: #667eea;
-            --light-secondary: #764ba2;
-            --light-hover: #edf2f7;
-            --light-shadow: rgba(0, 0, 0, 0.1);
-            
-            /* Темная тема */
-            --dark-bg: #0f0f23;
-            --dark-card: #1a1a2e;
-            --dark-text: #ffffff;
-            --dark-border: #2d3748;
-            --dark-accent: #667eea;
-            --dark-secondary: #764ba2;
-            --dark-hover: #2d3748;
-            --dark-shadow: rgba(0, 0, 0, 0.3);
+            /* Темная тема по умолчанию (для предотвращения белых вспышек) */
+            --bg-color: #0f0f23;
+            --card-color: #1a1a2e;
+            --text-color: #ffffff;
+            --border-color: #2d3748;
+            --accent-color: #667eea;
+            --secondary-color: #764ba2;
+            --shadow-color: rgba(0, 0, 0, 0.3);
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: var(--bg-color);
             color: var(--text-color);
             min-height: 100vh;
             padding: 15px;
-            transition: all 0.3s ease;
+            transition: background 0.3s ease, color 0.3s ease;
             line-height: 1.5;
+            overflow-x: hidden; /* Блокируем горизонтальный скролл */
         }
 
+        /* Светлая тема */
         body.light-theme {
-            --bg-color: var(--light-bg);
-            --card-color: var(--light-card);
-            --text-color: var(--light-text);
-            --border-color: var(--light-border);
-            --accent-color: var(--light-accent);
-            --secondary-color: var(--light-secondary);
-            --hover-color: var(--light-hover);
-            --shadow-color: var(--light-shadow);
+            --bg-color: #ffffff;
+            --card-color: #f8f9fa;
+            --text-color: #2d3748;
+            --border-color: #e2e8f0;
+            --accent-color: #667eea;
+            --secondary-color: #764ba2;
+            --shadow-color: rgba(0, 0, 0, 0.1);
         }
 
-        body.dark-theme {
-            --bg-color: var(--dark-bg);
-            --card-color: var(--dark-card);
-            --text-color: var(--dark-text);
-            --border-color: var(--dark-border);
-            --accent-color: var(--dark-accent);
-            --secondary-color: var(--dark-secondary);
-            --hover-color: var(--dark-hover);
-            --shadow-color: var(--dark-shadow);
-        }
+        /* Контейнер */
+        .container { max-width: 600px; margin: 0 auto; padding-bottom: 80px; }
 
-        /* 🔧 КОНТЕЙНЕР И ОСНОВНАЯ СТРУКТУРА */
-        .container {
-            max-width: 100%;
-            margin: 0 auto;
-        }
-
+        /* Заголовок */
         .header {
             text-align: center;
             margin-bottom: 20px;
             padding: 20px;
             background: var(--card-color);
             border-radius: 16px;
-            box-shadow: 0 4px 20px var(--shadow-color);
             border: 1px solid var(--border-color);
+            box-shadow: 0 4px 15px var(--shadow-color);
         }
 
         .header h1 {
-            font-size: 24px;
-            font-weight: 700;
-            margin-bottom: 8px;
+            font-size: 22px;
+            font-weight: 800;
             background: linear-gradient(135deg, var(--accent-color), var(--secondary-color));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            margin-bottom: 5px;
         }
 
-        .header p {
-            color: var(--text-color);
-            opacity: 0.8;
-            font-size: 14px;
-        }
-
-        /* 🔧 СИСТЕМА ВКЛАДОК */
+        /* Вкладки (Tabs) */
         .tabs {
             display: flex;
             background: var(--card-color);
+            padding: 5px;
             border-radius: 12px;
-            padding: 6px;
             margin-bottom: 20px;
             border: 1px solid var(--border-color);
-            box-shadow: 0 2px 10px var(--shadow-color);
             overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
         }
-
-        .tabs::-webkit-scrollbar {
-            display: none;
-        }
-
         .tab {
             flex: 1;
-            min-width: 70px;
-            padding: 12px 8px;
+            padding: 10px;
             text-align: center;
-            color: var(--text-color);
-            border: none;
             background: transparent;
+            border: none;
+            color: var(--text-color);
+            font-weight: 600;
+            font-size: 13px;
             border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.3s ease;
             opacity: 0.7;
+            transition: 0.3s;
             white-space: nowrap;
         }
-
         .tab.active {
             background: linear-gradient(135deg, var(--accent-color), var(--secondary-color));
             color: white;
             opacity: 1;
-            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
         }
 
-        /* 🔧 ОСНОВНОЙ КОНТЕНТ */
-        .content {
-            background: var(--card-color);
-            border-radius: 16px;
-            padding: 20px;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 4px 20px var(--shadow-color);
-            margin-bottom: 20px;
-        }
+        /* Контент */
+        .section { display: none; animation: fadeIn 0.3s ease; }
+        .section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-        .section {
-            display: none;
-            animation: fadeIn 0.3s ease;
-        }
-
-        .section.active {
-            display: block;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* 🔧 ФОРМЫ */
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            color: var(--text-color);
-            font-weight: 600;
-            font-size: 14px;
-        }
-
+        /* Формы */
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 8px; font-size: 13px; font-weight: 600; opacity: 0.9; }
         .form-control {
             width: 100%;
-            padding: 14px;
-            border: 2px solid var(--border-color);
-            border-radius: 12px;
-            font-size: 16px;
+            padding: 12px;
             background: var(--card-color);
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
             color: var(--text-color);
-            transition: all 0.3s ease;
+            font-size: 16px; /* Чтобы iOS не зумил */
+            transition: 0.3s;
         }
-
-        .form-control:focus {
-            outline: none;
-            border-color: var(--accent-color);
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-
-        .form-control::placeholder {
-            color: var(--text-color);
-            opacity: 0.5;
-        }
+        .form-control:focus { outline: none; border-color: var(--accent-color); }
 
         .btn {
+            width: 100%;
+            padding: 14px;
             background: linear-gradient(135deg, var(--accent-color), var(--secondary-color));
             color: white;
             border: none;
-            padding: 16px 24px;
             border-radius: 12px;
+            font-weight: 700;
             font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            width: 100%;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-            margin-bottom: 10px;
+            margin-top: 10px;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            active: transform: scale(0.98);
         }
+        .btn-secondary { background: var(--border-color); color: var(--text-color); box-shadow: none; }
+        .btn-danger { background: #ff4757; margin-top: 20px; }
 
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-        }
-
-        .btn:active {
-            transform: translateY(0);
-        }
-
-        .btn-secondary {
-            background: var(--border-color);
-            color: var(--text-color);
-            box-shadow: none;
-        }
-
-        .btn-secondary:hover {
-            background: var(--hover-color);
-            transform: translateY(-2px);
-        }
-
-        /* 🔧 КАРТОЧКИ ЭЛЕМЕНТОВ */
+        /* Карточки */
         .item-card {
             background: var(--card-color);
+            padding: 15px;
             border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 12px;
             border: 1px solid var(--border-color);
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 8px var(--shadow-color);
-        }
-
-        .item-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px var(--shadow-color);
-        }
-
-        .item-header {
-            display: flex;
-            align-items: flex-start;
-            gap: 15px;
             margin-bottom: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
-
+        .item-main { display: flex; gap: 12px; }
         .item-cover {
-            width: 80px;
-            height: 120px;
+            width: 70px;
+            height: 100px;
             border-radius: 8px;
             object-fit: cover;
-            border: 2px solid var(--border-color);
+            background: var(--border-color);
             flex-shrink: 0;
         }
+        .item-info { flex: 1; min-width: 0; }
+        .item-title { font-weight: 700; font-size: 16px; margin-bottom: 5px; line-height: 1.3; }
+        .item-meta { font-size: 13px; opacity: 0.7; margin-bottom: 5px; }
+        
+        /* Рейтинг */
+        .rating { color: #FFD700; font-size: 18px; letter-spacing: 2px; }
+        .rating-input span { cursor: pointer; color: var(--border-color); font-size: 24px; transition: 0.2s; }
+        .rating-input span.active { color: #FFD700; }
 
-        .no-cover {
-            width: 80px;
-            height: 120px;
-            border-radius: 8px;
-            background: var(--border-color);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--text-color);
-            opacity: 0.5;
-            font-size: 12px;
-            text-align: center;
-            flex-shrink: 0;
-            border: 2px dashed var(--border-color);
-        }
+        /* Прогресс бар */
+        .progress-container { height: 6px; background: var(--border-color); border-radius: 3px; overflow: hidden; margin-top: 8px; }
+        .progress-fill { height: 100%; background: var(--accent-color); transition: width 0.3s; }
 
-        .item-info {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .item-title {
-            font-weight: 600;
-            font-size: 16px;
-            margin-bottom: 8px;
-            color: var(--text-color);
-            word-break: break-word;
-        }
-
-        .item-meta {
-            font-size: 14px;
-            color: var(--text-color);
-            opacity: 0.8;
-            margin-bottom: 8px;
-            line-height: 1.4;
-        }
-
-        .rating {
-            display: flex;
-            gap: 2px;
-            margin: 10px 0;
-        }
-
-        .star {
-            font-size: 18px;
-            cursor: pointer;
-            color: #ddd;
-            transition: all 0.2s ease;
-        }
-
-        .star.active {
-            color: #FFD700;
-            text-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
-        }
-
-        .star:hover {
-            transform: scale(1.2);
-        }
-
-        .progress-bar {
-            height: 6px;
-            background: var(--border-color);
-            border-radius: 3px;
-            overflow: hidden;
-            margin: 10px 0;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(135deg, var(--accent-color), var(--secondary-color));
-            border-radius: 3px;
-            transition: width 0.5s ease;
-        }
-
-        .item-actions {
-            display: flex;
-            gap: 8px;
-            margin-top: 12px;
-        }
-
-        .action-btn {
-            flex: 1;
-            padding: 10px 12px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.2s ease;
-            text-align: center;
-        }
-
-        .btn-edit {
-            background: var(--accent-color);
-            color: white;
-        }
-
-        .btn-delete {
-            background: #ff4757;
-            color: white;
-        }
-
-        .btn-progress {
-            background: var(--secondary-color);
-            color: white;
-        }
-
-        .action-btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-        }
-
-        /* 🔧 СИСТЕМА СТАТУСОВ */
-        .status-tabs {
-            display: flex;
+        /* Кнопки действий */
+        .actions { display: flex; gap: 8px; margin-top: 5px; }
+        .act-btn { flex: 1; padding: 8px; border-radius: 8px; border: none; font-weight: 600; font-size: 13px; }
+        .btn-add { background: var(--accent-color); color: white; }
+        .btn-edit { background: var(--border-color); color: var(--text-color); }
+        
+        /* Быстрый прогресс */
+        .quick-progress { display: flex; gap: 5px; margin-top: 8px; overflow-x: auto; padding-bottom: 5px; }
+        .qp-btn {
+            padding: 6px 12px;
             background: var(--card-color);
-            border-radius: 10px;
-            padding: 4px;
-            margin-bottom: 20px;
             border: 1px solid var(--border-color);
-            box-shadow: 0 2px 8px var(--shadow-color);
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        .status-tabs::-webkit-scrollbar {
-            display: none;
-        }
-
-        .status-tab {
-            flex: 1;
-            min-width: 60px;
-            padding: 10px 8px;
-            text-align: center;
+            border-radius: 20px;
             color: var(--text-color);
-            border: none;
-            background: transparent;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.3s ease;
             font-size: 12px;
-            font-weight: 500;
-            opacity: 0.7;
+            font-weight: 600;
             white-space: nowrap;
         }
 
-        .status-tab.active {
-            background: linear-gradient(135deg, var(--accent-color), var(--secondary-color));
-            color: white;
-            opacity: 1;
-            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
-        }
-
-        .status-content {
-            display: none;
-        }
-
-        .status-content.active {
-            display: block;
-        }
-
-        /* 🔧 ПОИСК И ФИЛЬТРЫ */
-        .search-box {
-            margin-bottom: 15px;
-            position: relative;
-        }
-
-        .search-box input {
-            width: 100%;
-            padding: 14px 45px 14px 14px;
-            border: 2px solid var(--border-color);
-            border-radius: 12px;
-            background: var(--card-color);
-            color: var(--text-color);
-            font-size: 16px;
-            transition: all 0.3s ease;
-        }
-
-        .search-box input:focus {
-            outline: none;
-            border-color: var(--accent-color);
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-
-        .search-icon {
-            position: absolute;
-            right: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-color);
-            opacity: 0.5;
-        }
-
-        /* 🔧 ПУСТЫЕ СОСТОЯНИЯ */
-        .empty-state {
-            text-align: center;
-            padding: 50px 20px;
-            color: var(--text-color);
-            opacity: 0.6;
-        }
-
-        .empty-state .icon {
-            font-size: 48px;
-            margin-bottom: 15px;
-            opacity: 0.5;
-        }
-
-        .empty-state h4 {
-            font-size: 18px;
-            margin-bottom: 10px;
-            color: var(--text-color);
-        }
-
-        .empty-state p {
-            font-size: 14px;
-            line-height: 1.4;
-        }
-
-        /* 🔧 НАСТРОЙКИ */
-        .settings-option {
+        /* Статусы */
+        .status-scroll {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 16px 0;
-            border-bottom: 1px solid var(--border-color);
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
         }
-
-        .settings-option:last-child {
-            border-bottom: none;
-        }
-
-        .settings-label {
-            font-weight: 600;
-            color: var(--text-color);
-            font-size: 16px;
-            margin-bottom: 4px;
-        }
-
-        .settings-description {
-            color: var(--text-color);
-            opacity: 0.7;
-            font-size: 14px;
-            line-height: 1.4;
-        }
-
-        .switch {
-            position: relative;
-            display: inline-block;
-            width: 50px;
-            height: 26px;
-        }
-
-        .switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: var(--border-color);
-            transition: .4s;
-            border-radius: 34px;
-        }
-
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 18px;
-            width: 18px;
-            left: 4px;
-            bottom: 4px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
-        }
-
-        input:checked + .slider {
-            background: linear-gradient(135deg, var(--accent-color), var(--secondary-color));
-        }
-
-        input:checked + .slider:before {
-            transform: translateX(24px);
-        }
-
-        .theme-selector, .language-selector {
-            display: flex;
-            gap: 10px;
-            margin-top: 15px;
-        }
-
-        .theme-btn, .lang-btn {
-            flex: 1;
-            padding: 12px;
-            border: 2px solid var(--border-color);
-            border-radius: 10px;
+        .status-chip {
+            padding: 8px 16px;
             background: var(--card-color);
-            color: var(--text-color);
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: 500;
-            text-align: center;
-        }
-
-        .theme-btn.active, .lang-btn.active {
-            border-color: var(--accent-color);
-            background: linear-gradient(135deg, var(--accent-color), var(--secondary-color));
-            color: white;
-            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
-        }
-
-        /* 🔧 ПРЕДПРОСМОТР ОБЛОЖЕК */
-        .cover-preview {
-            width: 100%;
-            max-width: 200px;
-            border-radius: 8px;
-            margin-top: 10px;
-            border: 2px solid var(--border-color);
-            display: none;
-        }
-
-        /* 🔧 СТАТИСТИКА */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-top: 20px;
-        }
-
-        .stat-card {
-            background: var(--card-color);
-            padding: 20px;
-            border-radius: 12px;
-            text-align: center;
             border: 1px solid var(--border-color);
-            box-shadow: 0 2px 8px var(--shadow-color);
-        }
-
-        .stat-number {
-            font-size: 28px;
-            font-weight: 700;
-            color: var(--accent-color);
-            margin-bottom: 8px;
-        }
-
-        .stat-label {
-            font-size: 14px;
+            border-radius: 20px;
             color: var(--text-color);
-            opacity: 0.8;
+            font-size: 13px;
+            white-space: nowrap;
+            transition: 0.3s;
+        }
+        .status-chip.active {
+            background: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
         }
 
-        /* 🔧 УВЕДОМЛЕНИЯ */
+        /* Уведомления */
         .notification {
             position: fixed;
             top: 20px;
             right: 20px;
-            background: linear-gradient(135deg, var(--accent-color), var(--secondary-color));
-            color: white;
-            padding: 16px 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-            z-index: 10000;
-            max-width: 320px;
-            animation: slideInRight 0.3s ease;
-            border-left: 4px solid #FFD700;
-        }
-
-        @keyframes slideInRight {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-
-        .notification.success {
-            border-left-color: #4CAF50;
-        }
-
-        .notification.error {
-            border-left-color: #ff4757;
-        }
-
-        .notification.warning {
-            border-left-color: #ffa502;
-        }
-
-        .notification-title {
-            font-weight: 600;
-            margin-bottom: 5px;
-            font-size: 16px;
-        }
-
-        .notification-message {
-            font-size: 14px;
-            opacity: 0.9;
-            line-height: 1.4;
-        }
-
-        /* 🔧 PWA УВЕДОМЛЕНИЯ */
-        .pwa-install-prompt {
-            position: fixed;
-            bottom: 20px;
             left: 20px;
-            right: 20px;
-            background: var(--card-color);
-            border: 2px solid var(--accent-color);
-            border-radius: 12px;
             padding: 15px;
-            box-shadow: 0 4px 20px var(--shadow-color);
-            z-index: 10001;
-            display: none;
+            background: var(--card-color);
+            border-left: 4px solid var(--accent-color);
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            z-index: 9999;
+            transform: translateY(-150%);
+            transition: transform 0.3s ease;
         }
+        .notification.show { transform: translateY(0); }
 
-        .pwa-install-prompt.show {
-            display: block;
-            animation: slideInUp 0.3s ease;
-        }
-
-        @keyframes slideInUp {
-            from {
-                transform: translateY(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-
-        .pwa-buttons {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        .pwa-buttons .btn {
-            margin: 0;
-            flex: 1;
-        }
-
-        /* 🔧 АДАПТИВНОСТЬ */
-        @media (max-width: 480px) {
-            .container {
-                padding: 10px;
-            }
-            
-            .header {
-                padding: 15px;
-            }
-            
-            .header h1 {
-                font-size: 22px;
-            }
-            
-            .tab {
-                padding: 10px 6px;
-                font-size: 12px;
-            }
-            
-            .content {
-                padding: 15px;
-            }
-            
-            .form-control {
-                padding: 12px;
-                font-size: 16px;
-            }
-            
-            .btn {
-                padding: 14px 20px;
-                font-size: 16px;
-            }
-            
-            .item-header {
-                gap: 12px;
-            }
-            
-            .item-cover, .no-cover {
-                width: 70px;
-                height: 105px;
-            }
-            
-            .action-btn {
-                padding: 8px 10px;
-                font-size: 13px;
-            }
-            
-            .stats-grid {
-                grid-template-columns: 1fr;
-                gap: 10px;
-            }
-            
-            .stat-card {
-                padding: 15px;
-            }
-            
-            .stat-number {
-                font-size: 24px;
-            }
-        }
-
-        /* 🔧 SCROLLBAR */
-        ::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: var(--border-color);
-            border-radius: 3px;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: var(--accent-color);
-            border-radius: 3px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--secondary-color);
-        }
-
-        /* 🔧 TELEGRAM WEB APP SPECIFIC */
-        .tg-background {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: var(--bg-color);
-            z-index: -1;
-        }
-
-        /* 🔧 АНИМАЦИИ ЗАГРУЗКИ */
-        .loading {
-            text-align: center;
-            padding: 40px 20px;
-            color: var(--text-color);
-            opacity: 0.6;
-        }
-
-        .loading-spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid var(--border-color);
-            border-top: 4px solid var(--accent-color);
+        /* Спиннер загрузки */
+        .loading { text-align: center; padding: 40px; opacity: 0.6; }
+        .spinner {
+            width: 30px; height: 30px;
+            border: 3px solid var(--border-color);
+            border-top: 3px solid var(--accent-color);
             border-radius: 50%;
             animation: spin 1s linear infinite;
-            margin: 0 auto 15px;
+            margin: 0 auto 10px;
         }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        /* 🔧 ДОПОЛНИТЕЛЬНЫЕ СТИЛИ ДЛЯ УЛУЧШЕНИЯ UX */
-        .progress-section {
-            margin: 15px 0;
-        }
-
-        .progress-controls {
+        /* Настройки */
+        .settings-row {
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 10px;
-            margin: 12px 0;
+            padding: 15px 0;
+            border-bottom: 1px solid var(--border-color);
         }
 
-        .progress-btn {
-            background: var(--border-color);
-            border: none;
-            color: var(--text-color);
-            width: 36px;
-            height: 36px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            font-size: 16px;
-            font-weight: bold;
-        }
-
-        .progress-btn:hover {
-            background: var(--accent-color);
-            color: white;
-            transform: scale(1.1);
-        }
-
-        .progress-input {
-            background: var(--card-color);
-            border: 2px solid var(--border-color);
-            border-radius: 8px;
-            color: var(--text-color);
-            padding: 8px 12px;
-            text-align: center;
-            width: 70px;
-            font-size: 16px;
-            font-weight: 600;
-        }
-
-        .progress-input:focus {
-            outline: none;
-            border-color: var(--accent-color);
-        }
-
-        .progress-text {
-            font-size: 14px;
-            color: var(--text-color);
-            opacity: 0.8;
-            margin-left: 8px;
-        }
-
-        .completion-badge {
-            background: linear-gradient(135deg, #4CAF50, #45a049);
-            color: white;
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 600;
-            margin-left: 8px;
-        }
-
-        .quick-progress {
-            display: flex;
-            gap: 6px;
-            margin-top: 10px;
-        }
-
-        .quick-progress-btn {
-            background: var(--border-color);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            color: var(--text-color);
-            padding: 6px 10px;
-            font-size: 12px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            flex: 1;
-        }
-
-        .quick-progress-btn:hover {
-            background: var(--accent-color);
-            color: white;
-        }
-
-        /* 🔧 СТИЛИ ДЛЯ РЕДАКТИРОВАНИЯ */
-        .edit-form {
-            background: var(--card-color);
-            border-radius: 12px;
-            padding: 20px;
-            margin-top: 15px;
-            border: 2px solid var(--accent-color);
-            box-shadow: 0 4px 15px var(--shadow-color);
-        }
-
-        .edit-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 15px;
-        }
-
-        .btn-save {
-            background: linear-gradient(135deg, #4CAF50, #45a049);
-            color: white;
-        }
-
-        .btn-cancel {
-            background: var(--border-color);
-            color: var(--text-color);
-        }
+        /* PWA Установка - Скрыто по умолчанию */
+        #pwa-install-btn { display: none; }
     </style>
 </head>
-<body class="dark-theme">
-    <div class="tg-background"></div>
-    
-    <!-- PWA Install Prompt -->
-    <div class="pwa-install-prompt" id="pwaInstallPrompt">
-        <h4>📱 Установить приложение</h4>
-        <p>Установите AniManga Tracker для быстрого доступа без Telegram</p>
-        <div class="pwa-buttons">
-            <button class="btn" onclick="installPWA()">✅ Установить</button>
-            <button class="btn btn-secondary" onclick="dismissPWA()">❌ Позже</button>
-        </div>
+<body>
+
+    <div id="notification" class="notification">
+        <div style="font-weight:bold; margin-bottom:4px;" id="notif-title">Info</div>
+        <div id="notif-msg">Message</div>
     </div>
-    
+
     <div class="container">
-        <!-- 🔔 Панель уведомлений -->
-        <div id="notificationsPanel"></div>
-        
         <div class="header">
             <h1>🎌 AniManga Tracker</h1>
-            <p id="welcomeText">Отслеживайте свои аниме и мангу</p>
+            <p style="opacity: 0.7; font-size: 14px;">Твой личный список</p>
         </div>
-        
+
         <div class="tabs">
-            <button class="tab active" onclick="showSection('anime')" id="tabAnime">🎬 Аниме</button>
-            <button class="tab" onclick="showSection('manga')" id="tabManga">📚 Манга</button>
-            <button class="tab" onclick="showSection('stats')" id="tabStats">📊 Статистика</button>
-            <button class="tab" onclick="showSection('settings')" id="tabSettings">⚙️ Настройки</button>
+            <button class="tab active" onclick="switchTab('anime')">🎬 Аниме</button>
+            <button class="tab" onclick="switchTab('manga')">📚 Манга</button>
+            <button class="tab" onclick="switchTab('stats')">📊 Инфо</button>
+            <button class="tab" onclick="switchTab('settings')">⚙️ Настройки</button>
         </div>
-        
-        <div class="content">
-            <!-- 🎬 СЕКЦИЯ АНИМЕ -->
-            <div id="anime" class="section active">
-                <div class="form-group">
-                    <label for="animeTitle" id="labelAnimeTitle">Название аниме</label>
-                    <input type="text" id="animeTitle" class="form-control" placeholder="Например: Наруто">
+
+        <div id="anime" class="section active">
+            <div class="item-card" style="border-style: dashed; text-align: center;">
+                <h3 style="margin-bottom: 10px;">Добавить Аниме</h3>
+                <input type="text" id="animeInput" class="form-control" placeholder="Название (Наруто)" style="margin-bottom: 10px;">
+                <input type="number" id="animeTotalEp" class="form-control" placeholder="Всего серий (12)" style="margin-bottom: 10px;">
+                <select id="animeStatusSelect" class="form-control" style="margin-bottom: 10px;">
+                    <option value="watching">👀 Смотрю</option>
+                    <option value="planned">📅 В планах</option>
+                    <option value="completed">✅ Просмотрено</option>
+                    <option value="dropped">❌ Брошено</option>
+                </select>
+                <button class="btn" onclick="addItem('anime')">➕ Добавить</button>
+            </div>
+
+            <div class="status-scroll" id="animeFilters">
                 </div>
-                
-                <div class="form-group">
-                    <label for="animeCover" id="labelAnimeCover">Ссылка на обложку</label>
-                    <input type="text" id="animeCover" class="form-control" placeholder="https://example.com/cover.jpg" onchange="previewCover('anime')">
-                    <img id="animeCoverPreview" class="cover-preview" alt="Предпросмотр обложки">
+            
+            <div id="animeList">
+                <div class="loading"><div class="spinner"></div>Загрузка...</div>
+            </div>
+        </div>
+
+        <div id="manga" class="section">
+            <div class="item-card" style="border-style: dashed; text-align: center;">
+                <h3 style="margin-bottom: 10px;">Добавить Мангу</h3>
+                <input type="text" id="mangaInput" class="form-control" placeholder="Название (Берсерк)" style="margin-bottom: 10px;">
+                <input type="number" id="mangaTotalCh" class="form-control" placeholder="Всего глав (100)" style="margin-bottom: 10px;">
+                <select id="mangaStatusSelect" class="form-control" style="margin-bottom: 10px;">
+                    <option value="reading">📖 Читаю</option>
+                    <option value="planned">📅 В планах</option>
+                    <option value="completed">✅ Прочитано</option>
+                    <option value="dropped">❌ Брошено</option>
+                </select>
+                <button class="btn" onclick="addItem('manga')">➕ Добавить</button>
+            </div>
+
+            <div class="status-scroll" id="mangaFilters">
                 </div>
-                
-                <div class="form-group">
-                    <label for="animeStatus" id="labelAnimeStatus">Статус</label>
-                    <select id="animeStatus" class="form-control">
-                        <option value="watching">👀 Смотрю</option>
-                        <option value="planned">📅 В планах</option>
-                        <option value="completed">✅ Просмотрено</option>
-                        <option value="dropped">❌ Брошено</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="animeEpisodes" id="labelAnimeEpisodes">Всего эпизодов</label>
-                    <input type="number" id="animeEpisodes" class="form-control" value="12" min="1">
-                </div>
-                
-                <div class="form-group">
-                    <label for="animeProgress" id="labelAnimeProgress">Просмотрено эпизодов</label>
-                    <input type="number" id="animeProgress" class="form-control" value="0" min="0">
-                </div>
-                
-                <div class="form-group">
-                    <label id="labelAnimeRating">Рейтинг</label>
-                    <div class="rating" id="animeRating">
-                        <span class="star" data-value="1">★</span>
-                        <span class="star" data-value="2">★</span>
-                        <span class="star" data-value="3">★</span>
-                        <span class="star" data-value="4">★</span>
-                        <span class="star" data-value="5">★</span>
+
+            <div id="mangaList">
+                <div class="loading"><div class="spinner"></div>Загрузка...</div>
+            </div>
+        </div>
+
+        <div id="stats" class="section">
+            <div class="item-card">
+                <h3>📊 Общая статистика</h3>
+                <canvas id="statsChart" width="300" height="300"></canvas>
+                <div style="margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; text-align: center;">
+                    <div style="background:var(--bg-color); padding:10px; border-radius:8px;">
+                        <div style="font-size:24px; font-weight:bold; color:var(--accent-color)" id="statAnimeCount">0</div>
+                        <div style="font-size:12px">Аниме</div>
                     </div>
-                    <div style="color: var(--text-color); opacity: 0.7; font-size: 12px; margin-top: 5px;" id="animeRatingHelp">Нажмите на звезду для оценки</div>
-                </div>
-                
-                <button class="btn" onclick="addAnime()" id="btnAddAnime">🎬 Добавить аниме</button>
-                
-                <!-- Вкладки статусов для аниме -->
-                <div class="status-tabs" id="animeStatusTabs">
-                    <button class="status-tab active" data-status="all" id="animeTabAll">📺 Все (0)</button>
-                    <button class="status-tab" data-status="watching" id="animeTabWatching">👀 Смотрю (0)</button>
-                    <button class="status-tab" data-status="planned" id="animeTabPlanned">📅 Планы (0)</button>
-                    <button class="status-tab" data-status="completed" id="animeTabCompleted">✅ Просмотрено (0)</button>
-                    <button class="status-tab" data-status="dropped" id="animeTabDropped">❌ Брошено (0)</button>
-                </div>
-                
-                <div class="search-box">
-                    <input type="text" id="animeSearch" class="form-control" placeholder="🔍 Поиск аниме..." onkeyup="searchItems('anime')">
-                    <div class="search-icon">🔍</div>
-                </div>
-                
-                <!-- Контейнеры для каждого статуса аниме -->
-                <div id="animeAllContent" class="status-content active">
-                    <div class="loading">
-                        <div class="loading-spinner"></div>
-                        <div id="loadingAnimeText">Загрузка аниме...</div>
-                    </div>
-                </div>
-                <div id="animeWatchingContent" class="status-content">
-                    <div class="loading">
-                        <div class="loading-spinner"></div>
-                        <div>Загрузка...</div>
-                    </div>
-                </div>
-                <div id="animePlannedContent" class="status-content">
-                    <div class="loading">
-                        <div class="loading-spinner"></div>
-                        <div>Загрузка...</div>
-                    </div>
-                </div>
-                <div id="animeCompletedContent" class="status-content">
-                    <div class="loading">
-                        <div class="loading-spinner"></div>
-                        <div>Загрузка...</div>
-                    </div>
-                </div>
-                <div id="animeDroppedContent" class="status-content">
-                    <div class="loading">
-                        <div class="loading-spinner"></div>
-                        <div>Загрузка...</div>
+                    <div style="background:var(--bg-color); padding:10px; border-radius:8px;">
+                        <div style="font-size:24px; font-weight:bold; color:var(--secondary-color)" id="statMangaCount">0</div>
+                        <div style="font-size:12px">Манга</div>
                     </div>
                 </div>
             </div>
-            
-            <!-- 📚 СЕКЦИЯ МАНГИ -->
-            <div id="manga" class="section">
-                <div class="form-group">
-                    <label for="mangaTitle" id="labelMangaTitle">Название манги</label>
-                    <input type="text" id="mangaTitle" class="form-control" placeholder="Например: Ван Пис">
+        </div>
+
+        <div id="settings" class="section">
+            <div class="item-card">
+                <h3>⚙️ Настройки</h3>
+                
+                <div class="settings-row">
+                    <span>🌙 Темная тема</span>
+                    <input type="checkbox" id="themeToggle" onchange="toggleTheme()" checked>
                 </div>
                 
-                <div class="form-group">
-                    <label for="mangaCover" id="labelMangaCover">Ссылка на обложку</label>
-                    <input type="text" id="mangaCover" class="form-control" placeholder="https://example.com/cover.jpg" onchange="previewCover('manga')">
-                    <img id="mangaCoverPreview" class="cover-preview" alt="Предпросмотр обложки">
+                <div class="settings-row">
+                    <span>🇺🇸 English Language</span>
+                    <input type="checkbox" id="langToggle" onchange="toggleLang()">
                 </div>
-                
-                <div class="form-group">
-                    <label for="mangaStatus" id="labelMangaStatus">Статус</label>
-                    <select id="mangaStatus" class="form-control">
-                        <option value="reading">👀 Читаю</option>
-                        <option value="planned">📅 В планах</option>
-                        <option value="completed">✅ Прочитано</option>
-                        <option value="dropped">❌ Брошено</option>
-                    </select>
+
+                <div class="settings-row" id="pwa-install-row" style="display:none;">
+                    <span>📱 Установить приложение</span>
+                    <button class="qp-btn" onclick="installPWA()">Install</button>
                 </div>
-                
-                <div class="form-group">
-                    <label for="mangaChapters" id="labelMangaChapters">Всего глав</label>
-                    <input type="number" id="mangaChapters" class="form-control" value="50" min="1">
+
+                <div style="margin-top: 20px;">
+                    <button class="btn btn-secondary" onclick="exportData()">📥 Скачать резервную копию</button>
+                    <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()" style="margin-top:10px">📤 Загрузить из файла</button>
+                    <input type="file" id="importFile" style="display:none" onchange="importData(this)">
+                    
+                    <button class="btn btn-danger" onclick="clearData()">🗑️ Удалить все данные</button>
+                    
+                    <button class="btn btn-secondary" onclick="window.location.reload()" style="margin-top: 20px; opacity: 0.5;">🔄 Перезагрузить App</button>
                 </div>
-                
-                <div class="form-group">
-                    <label for="mangaProgress" id="labelMangaProgress">Прочитано глав</label>
-                    <input type="number" id="mangaProgress" class="form-control" value="0" min="0">
-                </div>
-                
-                <div class="form-group">
-                    <label id="labelMangaRating">Рейтинг</label>
-                    <div class="rating" id="mangaRating">
-                        <span class="star" data-value="1">★</span>
-                        <span class="star" data-value="2">★</span>
-                        <span class="star" data-value="3">★</span>
-                        <span class="star" data-value="4">★</span>
-                        <span class="star" data-value="5">★</span>
-                    </div>
-                    <div style="color: var(--text-color); opacity: 0.7; font-size: 12px; margin-top: 5px;" id="mangaRatingHelp">Нажмите на звезду для оценки</div>
-                </div>
-                
-                <button class="btn" onclick="addManga()" id="btnAddManga">📚 Добавить мангу</button>
-                
-                <!-- Вкладки статусов для манги -->
-                <div class="status-tabs" id="mangaStatusTabs">
-                    <button class="status-tab active" data-status="all" id="mangaTabAll">📚 Все (0)</button>
-                    <button class="status-tab" data-status="reading" id="mangaTabReading">👀 Читаю (0)</button>
-                    <button class="status-tab" data-status="planned" id="mangaTabPlanned">📅 Планы (0)</button>
-                    <button class="status-tab" data-status="completed" id="mangaTabCompleted">✅ Прочитано (0)</button>
-                    <button class="status-tab" data-status="dropped" id="mangaTabDropped">❌ Брошено (0)</button>
-                </div>
-                
-                <div class="search-box">
-                    <input type="text" id="mangaSearch" class="form-control" placeholder="🔍 Поиск манги..." onkeyup="searchItems('manga')">
-                    <div class="search-icon">🔍</div>
-                </div>
-                
-                <!-- Контейнеры для каждого статуса манги -->
-                <div id="mangaAllContent" class="status-content active">
-                    <div class="loading">
-                        <div class="loading-spinner"></div>
-                        <div id="loadingMangaText">Загрузка манги...</div>
-                    </div>
-                </div>
-                <div id="mangaReadingContent" class="status-content">
-                    <div class="loading">
-                        <div class="loading-spinner"></div>
-                        <div>Загрузка...</div>
-                    </div>
-                </div>
-                <div id="mangaPlannedContent" class="status-content">
-                    <div class="loading">
-                        <div class="loading-spinner"></div>
-                        <div>Загрузка...</div>
-                    </div>
-                </div>
-                <div id="mangaCompletedContent" class="status-content">
-                    <div class="loading">
-                        <div class="loading-spinner"></div>
-                        <div>Загрузка...</div>
-                    </div>
-                </div>
-                <div id="mangaDroppedContent" class="status-content">
-                    <div class="loading">
-                        <div class="loading-spinner"></div>
-                        <div>Загрузка...</div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- 📊 СЕКЦИЯ СТАТИСТИКИ -->
-            <div id="stats" class="section">
-                <h3 style="text-align: center; margin-bottom: 20px; color: var(--accent-color);" id="statsTitle">📊 Статистика</h3>
-                
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-number" id="totalAnime">0</div>
-                        <div class="stat-label" id="statTotalAnime">Всего аниме</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number" id="totalManga">0</div>
-                        <div class="stat-label" id="statTotalManga">Всего манги</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number" id="completedAnime">0</div>
-                        <div class="stat-label" id="statCompletedAnime">Просмотрено</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number" id="completedManga">0</div>
-                        <div class="stat-label" id="statCompletedManga">Прочитано</div>
-                    </div>
-                </div>
-                
-                <div style="margin-top: 25px;">
-                    <h4 style="color: var(--accent-color); margin-bottom: 15px; text-align: center;" id="statsChartsTitle">Графики</h4>
-                    <canvas id="statsChart" width="400" height="200" style="max-width: 100%;"></canvas>
-                </div>
-            </div>
-            
-            <!-- ⚙️ СЕКЦИЯ НАСТРОЕК -->
-            <div id="settings" class="section">
-                <h3 style="text-align: center; margin-bottom: 20px; color: var(--accent-color);" id="settingsTitle">⚙️ Настройки</h3>
-                
-                <div class="settings-option">
-                    <div>
-                        <div class="settings-label" id="settingsThemeLabel">Тема</div>
-                        <div class="settings-description" id="settingsThemeDesc">Выберите светлую или темную тему</div>
-                    </div>
-                </div>
-                <div class="theme-selector">
-                    <button class="theme-btn active" onclick="setTheme('dark')" id="themeDark">🌙 Темная</button>
-                    <button class="theme-btn" onclick="setTheme('light')" id="themeLight">☀️ Светлая</button>
-                </div>
-                
-                <div class="settings-option">
-                    <div>
-                        <div class="settings-label" id="settingsLanguageLabel">Язык</div>
-                        <div class="settings-description" id="settingsLanguageDesc">Выберите язык интерфейса</div>
-                    </div>
-                </div>
-                <div class="language-selector">
-                    <button class="lang-btn active" onclick="setLanguage('ru')" id="langRu">🇷🇺 Русский</button>
-                    <button class="lang-btn" onclick="setLanguage('en')" id="langEn">🇺🇸 English</button>
-                </div>
-                
-                <!-- PWA Section -->
-                <div class="settings-option">
-                    <div>
-                        <div class="settings-label" id="settingsPwaLabel">Установить приложение</div>
-                        <div class="settings-description" id="settingsPwaDesc">Установите приложение для доступа без Telegram</div>
-                    </div>
-                    <button class="btn-secondary" style="padding: 10px 15px; width: auto;" onclick="showPWAInstallPrompt()" id="btnPwaInstall">📱 Установить</button>
-                </div>
-                
-                <div class="settings-option">
-                    <div>
-                        <div class="settings-label" id="settingsExportLabel">Экспорт данных</div>
-                        <div class="settings-description" id="settingsExportDesc">Скачайте резервную копию ваших данных</div>
-                    </div>
-                    <button class="btn-secondary" style="padding: 10px 15px; width: auto;" onclick="exportData()" id="btnExport">📥 Экспорт</button>
-                </div>
-                
-                <div class="settings-option">
-                    <div>
-                        <div class="settings-label" id="settingsImportLabel">Импорт данных</div>
-                        <div class="settings-description" id="settingsImportDesc">Загрузите данные из файла</div>
-                    </div>
-                    <button class="btn-secondary" style="padding: 10px 15px; width: auto;" onclick="importData()" id="btnImport">📤 Импорт</button>
-                </div>
-                
-                <button class="btn" onclick="clearAllData()" style="margin-top: 25px; background: #ff4757;" id="btnClearData">🗑️ Очистить все данные</button>
             </div>
         </div>
     </div>
 
     <script>
-        // 🔧 ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ И КОНСТАНТЫ
-        const STORAGE_KEY = 'animanga_tracker_data';
-        let tg = null;
-        let currentAnimeRating = 0;
-        let currentMangaRating = 0;
-        let currentLanguage = 'ru';
-        let currentTheme = 'dark';
-        let currentAnimeStatusTab = 'all';
-        let currentMangaStatusTab = 'all';
-        let charts = {};
-        let activeSearchTerms = {
-            anime: '',
-            manga: ''
+        // 🔧 ИНИЦИАЛИЗАЦИЯ TELEGRAM
+        let tg = window.Telegram.WebApp;
+        
+        // Принудительно расширяем и сообщаем о готовности
+        tg.expand();
+        if (tg.ready) tg.ready();
+
+        // Установка цветов Telegram
+        document.documentElement.style.setProperty('--bg-color', tg.backgroundColor || '#0f0f23');
+        document.documentElement.style.setProperty('--card-color', tg.secondaryBackgroundColor || '#1a1a2e');
+        document.documentElement.style.setProperty('--text-color', tg.textColor || '#ffffff');
+
+        // ГЛОБАЛЬНЫЕ ДАННЫЕ
+        const DB_KEY = 'animanga_db_' + (tg.initDataUnsafe?.user?.id || 'local_user');
+        let appData = {
+            anime: [],
+            manga: [],
+            settings: { theme: 'dark', lang: 'ru' }
         };
-        let deferredPrompt = null;
-        let isPWAInstalled = false;
+        
+        let currentFilter = { anime: 'all', manga: 'all' };
 
-        // 🔧 PWA ФУНКЦИОНАЛЬНОСТЬ
-        function initializePWA() {
-            // Проверяем, установлено ли приложение
-            if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
-                isPWAInstalled = true;
-                console.log('PWA is installed');
-            }
-
-            // Обработчик события beforeinstallprompt
-            window.addEventListener('beforeinstallprompt', (e) => {
-                e.preventDefault();
-                deferredPrompt = e;
-                console.log('PWA install prompt available');
-                
-                // Показываем кнопку установки в настройках
-                document.getElementById('btnPwaInstall').style.display = 'block';
-            });
-
-            // Обработчик события appinstalled
-            window.addEventListener('appinstalled', () => {
-                isPWAInstalled = true;
-                deferredPrompt = null;
-                console.log('PWA was installed');
-                showNotification(getText('pwaInstalledTitle'), getText('pwaInstalledMessage'), 'success');
-                document.getElementById('pwaInstallPrompt').classList.remove('show');
-                document.getElementById('btnPwaInstall').style.display = 'none';
-            });
-
-            // Регистрируем Service Worker
-            if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('/sw.js')
-                    .then((registration) => {
-                        console.log('SW registered: ', registration);
-                    })
-                    .catch((registrationError) => {
-                        console.log('SW registration failed: ', registrationError);
-                    });
-            }
-        }
-
-        function showPWAInstallPrompt() {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                deferredPrompt.userChoice.then((choiceResult) => {
-                    if (choiceResult.outcome === 'accepted') {
-                        console.log('User accepted the install prompt');
-                    } else {
-                        console.log('User dismissed the install prompt');
-                    }
-                    deferredPrompt = null;
-                });
-            } else if (isPWAInstalled) {
-                showNotification(getText('pwaAlreadyInstalledTitle'), getText('pwaAlreadyInstalledMessage'), 'info');
-            } else {
-                showNotification(getText('pwaNotSupportedTitle'), getText('pwaNotSupportedMessage'), 'warning');
-            }
-        }
-
-        function installPWA() {
-            showPWAInstallPrompt();
-        }
-
-        function dismissPWA() {
-            document.getElementById('pwaInstallPrompt').classList.remove('show');
-        }
-
-        // 🔧 ТЕКСТЫ НА РАЗНЫХ ЯЗЫКАХ
-        const translations = {
+        // ТЕКСТЫ
+        const i18n = {
             ru: {
-                welcome: "Добро пожаловать в AniManga Tracker!",
-                welcomeSubtitle: "Отслеживайте свои аниме и мангу",
-                anime: "Аниме",
-                manga: "Манга",
-                stats: "Статистика",
-                settings: "Настройки",
-                addAnime: "🎬 Добавить аниме",
-                addManga: "📚 Добавить мангу",
-                animeTitle: "Название аниме",
-                mangaTitle: "Название манги",
-                coverLink: "Ссылка на обложку",
-                status: "Статус",
-                totalEpisodes: "Всего эпизодов",
-                watchedEpisodes: "Просмотрено эпизодов",
-                totalChapters: "Всего глав",
-                readChapters: "Прочитано глав",
-                rating: "Рейтинг",
-                ratingHelp: "Нажмите на звезду для оценки",
-                searchAnime: "🔍 Поиск аниме...",
-                searchManga: "🔍 Поиск манги...",
-                all: "Все",
-                watching: "Смотрю",
-                reading: "Читаю",
-                planned: "Планы",
-                completed: "Просмотрено",
-                dropped: "Брошено",
-                totalAnime: "Всего аниме",
-                totalManga: "Всего манги",
-                completedAnime: "Просмотрено",
-                completedManga: "Прочитано",
-                statsTitle: "📊 Статистика",
-                statsChartsTitle: "Графики",
-                settingsTitle: "⚙️ Настройки",
-                themeLabel: "Тема",
-                themeDesc: "Выберите светлую или темную тему",
-                themeDark: "🌙 Темная",
-                themeLight: "☀️ Светлая",
-                languageLabel: "Язык",
-                languageDesc: "Выберите язык интерфейса",
-                languageRu: "🇷🇺 Русский",
-                languageEn: "🇺🇸 English",
-                pwaLabel: "Установить приложение",
-                pwaDesc: "Установите приложение для доступа без Telegram",
-                pwaInstall: "📱 Установить",
-                exportLabel: "Экспорт данных",
-                exportDesc: "Скачайте резервную копию ваших данных",
-                importLabel: "Импорт данных",
-                importDesc: "Загрузите данные из файла",
-                exportBtn: "📥 Экспорт",
-                importBtn: "📤 Импорт",
-                clearData: "🗑️ Очистить все данные",
-                edit: "✏️ Редактировать",
-                delete: "🗑️ Удалить",
-                progress: "📈 Прогресс",
-                noItems: "Нет элементов",
-                addFirstItem: "Добавьте первый элемент",
-                noResults: "Ничего не найдено",
-                tryChangingSearch: "Попробуйте изменить поисковый запрос",
-                confirmDelete: "Удалить этот элемент?",
-                success: "Успех",
-                error: "Ошибка",
-                added: "добавлено",
-                deleted: "удалено",
-                updated: "обновлено",
-                saveError: "Ошибка сохранения",
-                invalidFile: "Неверный формат файла",
-                dataExported: "Данные экспортированы",
-                dataImported: "Данные импортированы",
-                allDataDeleted: "Все данные удалены",
-                confirmClearData: "Вы уверены? Это удалит все ваши данные.",
-                loading: "Загрузка...",
-                loadingAnime: "Загрузка аниме...",
-                loadingManga: "Загрузка манги...",
-                completed: "Завершено!",
-                continueWatching: "Продолжить просмотр",
-                continueReading: "Продолжить чтение",
-                pwaInstallTitle: "Установить приложение",
-                pwaInstallMessage: "Установите AniManga Tracker для быстрого доступа без Telegram",
-                pwaInstalledTitle: "Приложение установлено!",
-                pwaInstalledMessage: "Теперь вы можете открывать приложение без Telegram",
-                pwaAlreadyInstalledTitle: "Приложение уже установлено",
-                pwaAlreadyInstalledMessage: "Приложение уже установлено на ваше устройство",
-                pwaNotSupportedTitle: "Установка недоступна",
-                pwaNotSupportedMessage: "Ваш браузер не поддерживает установку приложений"
+                anime: 'Аниме', manga: 'Манга', stats: 'Инфо', settings: 'Настройки',
+                add: 'Добавить', watch: 'Смотрю', plan: 'В планах', done: 'Готово', drop: 'Брошено',
+                ep: 'эп.', ch: 'гл.', empty: 'Список пуст', deleteConfirm: 'Удалить?',
+                saved: 'Сохранено!', imported: 'Данные загружены'
             },
             en: {
-                welcome: "Welcome to AniManga Tracker!",
-                welcomeSubtitle: "Track your anime and manga",
-                anime: "Anime",
-                manga: "Manga",
-                stats: "Statistics",
-                settings: "Settings",
-                addAnime: "🎬 Add Anime",
-                addManga: "📚 Add Manga",
-                animeTitle: "Anime Title",
-                mangaTitle: "Manga Title",
-                coverLink: "Cover Link",
-                status: "Status",
-                totalEpisodes: "Total Episodes",
-                watchedEpisodes: "Watched Episodes",
-                totalChapters: "Total Chapters",
-                readChapters: "Read Chapters",
-                rating: "Rating",
-                ratingHelp: "Click on a star to rate",
-                searchAnime: "🔍 Search anime...",
-                searchManga: "🔍 Search manga...",
-                all: "All",
-                watching: "Watching",
-                reading: "Reading",
-                planned: "Planned",
-                completed: "Completed",
-                dropped: "Dropped",
-                totalAnime: "Total Anime",
-                totalManga: "Total Manga",
-                completedAnime: "Completed",
-                completedManga: "Completed",
-                statsTitle: "📊 Statistics",
-                statsChartsTitle: "Charts",
-                settingsTitle: "⚙️ Settings",
-                themeLabel: "Theme",
-                themeDesc: "Choose light or dark theme",
-                themeDark: "🌙 Dark",
-                themeLight: "☀️ Light",
-                languageLabel: "Language",
-                languageDesc: "Choose interface language",
-                languageRu: "🇷🇺 Russian",
-                languageEn: "🇺🇸 English",
-                pwaLabel: "Install App",
-                pwaDesc: "Install the app for access without Telegram",
-                pwaInstall: "📱 Install",
-                exportLabel: "Export Data",
-                exportDesc: "Download your data backup",
-                importLabel: "Import Data",
-                importDesc: "Upload data from file",
-                exportBtn: "📥 Export",
-                importBtn: "📤 Import",
-                clearData: "🗑️ Clear All Data",
-                edit: "✏️ Edit",
-                delete: "🗑️ Delete",
-                progress: "📈 Progress",
-                noItems: "No items",
-                addFirstItem: "Add first item",
-                noResults: "No results found",
-                tryChangingSearch: "Try changing your search",
-                confirmDelete: "Delete this item?",
-                success: "Success",
-                error: "Error",
-                added: "added",
-                deleted: "deleted",
-                updated: "updated",
-                saveError: "Save error",
-                invalidFile: "Invalid file format",
-                dataExported: "Data exported",
-                dataImported: "Data imported",
-                allDataDeleted: "All data deleted",
-                confirmClearData: "Are you sure? This will delete all your data.",
-                loading: "Loading...",
-                loadingAnime: "Loading anime...",
-                loadingManga: "Loading manga...",
-                completed: "Completed!",
-                continueWatching: "Continue watching",
-                continueReading: "Continue reading",
-                pwaInstallTitle: "Install App",
-                pwaInstallMessage: "Install AniManga Tracker for quick access without Telegram",
-                pwaInstalledTitle: "App installed!",
-                pwaInstalledMessage: "You can now open the app without Telegram",
-                pwaAlreadyInstalledTitle: "App already installed",
-                pwaAlreadyInstalledMessage: "The app is already installed on your device",
-                pwaNotSupportedTitle: "Installation not available",
-                pwaNotSupportedMessage: "Your browser doesn't support app installation"
+                anime: 'Anime', manga: 'Manga', stats: 'Stats', settings: 'Settings',
+                add: 'Add', watch: 'Watching', plan: 'Planned', done: 'Completed', drop: 'Dropped',
+                ep: 'ep.', ch: 'ch.', empty: 'List is empty', deleteConfirm: 'Delete?',
+                saved: 'Saved!', imported: 'Data imported'
             }
         };
 
-        // 🔧 ИНИЦИАЛИЗАЦИЯ TELEGRAM WEB APP
-        function initTelegramApp() {
-            if (window.Telegram && window.Telegram.WebApp) {
-                tg = window.Telegram.WebApp;
-                tg.expand();
-                tg.enableClosingConfirmation();
-                
-                // Устанавливаем тему Telegram
-                document.documentElement.style.setProperty('--tg-theme-bg-color', 'var(--bg-color)');
-                document.documentElement.style.setProperty('--tg-theme-text-color', 'var(--text-color)');
-                document.documentElement.style.setProperty('--tg-theme-hint-color', 'var(--text-color)');
-                document.documentElement.style.setProperty('--tg-theme-link-color', 'var(--accent-color)');
-                document.documentElement.style.setProperty('--tg-theme-button-color', 'var(--accent-color)');
-                document.documentElement.style.setProperty('--tg-theme-button-text-color', '#ffffff');
-                
-                // Показываем приветственное сообщение
-                setTimeout(() => {
-                    showNotification(getText('welcome'), getText('welcomeSubtitle'), 'info');
-                }, 1000);
-                
-                console.log('Telegram Web App initialized');
-            } else {
-                console.log('Telegram Web App not detected, running in standalone mode');
-                // Показываем PWA промпт если не в Telegram
-                setTimeout(() => {
-                    if (!isPWAInstalled && deferredPrompt) {
-                        document.getElementById('pwaInstallPrompt').classList.add('show');
-                    }
-                }, 3000);
-            }
-        }
+        // ЗАГРУЗКА ПРИЛОЖЕНИЯ
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData();
+            renderAll();
+            checkPWA(); // Проверка возможности установки
+        });
 
-        // 🔧 СИСТЕМА ЯЗЫКОВ
-        function getText(key) {
-            return translations[currentLanguage][key] || key;
-        }
-
-        function setLanguage(lang) {
-            currentLanguage = lang;
-            saveSettings();
-            updateUI();
-            showNotification(getText('success'), getText('languageLabel') + ' ' + getText('updated'), 'success');
-        }
-
-        function updateUI() {
-            // Обновляем заголовок и приветствие
-            document.querySelector('title').textContent = 'AniManga Tracker';
-            document.getElementById('welcomeText').textContent = getText('welcomeSubtitle');
-            
-            // Обновляем основные вкладки
-            document.getElementById('tabAnime').textContent = '🎬 ' + getText('anime');
-            document.getElementById('tabManga').textContent = '📚 ' + getText('manga');
-            document.getElementById('tabStats').textContent = getText('stats');
-            document.getElementById('tabSettings').textContent = getText('settings');
-            
-            // Обновляем форму аниме
-            document.getElementById('labelAnimeTitle').textContent = getText('animeTitle');
-            document.getElementById('animeTitle').placeholder = getText('animeTitle');
-            document.getElementById('labelAnimeCover').textContent = getText('coverLink');
-            document.getElementById('animeCover').placeholder = getText('coverLink');
-            document.getElementById('labelAnimeStatus').textContent = getText('status');
-            document.getElementById('labelAnimeEpisodes').textContent = getText('totalEpisodes');
-            document.getElementById('labelAnimeProgress').textContent = getText('watchedEpisodes');
-            document.getElementById('labelAnimeRating').textContent = getText('rating');
-            document.getElementById('animeRatingHelp').textContent = getText('ratingHelp');
-            document.getElementById('btnAddAnime').textContent = getText('addAnime');
-            document.getElementById('animeSearch').placeholder = getText('searchAnime');
-            document.getElementById('loadingAnimeText').textContent = getText('loadingAnime');
-            
-            // Обновляем форму манги
-            document.getElementById('labelMangaTitle').textContent = getText('mangaTitle');
-            document.getElementById('mangaTitle').placeholder = getText('mangaTitle');
-            document.getElementById('labelMangaCover').textContent = getText('coverLink');
-            document.getElementById('mangaCover').placeholder = getText('coverLink');
-            document.getElementById('labelMangaStatus').textContent = getText('status');
-            document.getElementById('labelMangaChapters').textContent = getText('totalChapters');
-            document.getElementById('labelMangaProgress').textContent = getText('readChapters');
-            document.getElementById('labelMangaRating').textContent = getText('rating');
-            document.getElementById('mangaRatingHelp').textContent = getText('ratingHelp');
-            document.getElementById('btnAddManga').textContent = getText('addManga');
-            document.getElementById('mangaSearch').placeholder = getText('searchManga');
-            document.getElementById('loadingMangaText').textContent = getText('loadingManga');
-            
-            // Обновляем вкладки статусов
-            updateStatusTabs();
-            
-            // Обновляем статистику
-            document.getElementById('statsTitle').textContent = getText('statsTitle');
-            document.getElementById('statsChartsTitle').textContent = getText('statsChartsTitle');
-            document.getElementById('statTotalAnime').textContent = getText('totalAnime');
-            document.getElementById('statTotalManga').textContent = getText('totalManga');
-            document.getElementById('statCompletedAnime').textContent = getText('completedAnime');
-            document.getElementById('statCompletedManga').textContent = getText('completedManga');
-            
-            // Обновляем настройки
-            document.getElementById('settingsTitle').textContent = getText('settingsTitle');
-            document.getElementById('settingsThemeLabel').textContent = getText('themeLabel');
-            document.getElementById('settingsThemeDesc').textContent = getText('themeDesc');
-            document.getElementById('themeDark').textContent = getText('themeDark');
-            document.getElementById('themeLight').textContent = getText('themeLight');
-            document.getElementById('settingsLanguageLabel').textContent = getText('languageLabel');
-            document.getElementById('settingsLanguageDesc').textContent = getText('languageDesc');
-            document.getElementById('langRu').textContent = getText('languageRu');
-            document.getElementById('langEn').textContent = getText('languageEn');
-            document.getElementById('settingsPwaLabel').textContent = getText('pwaLabel');
-            document.getElementById('settingsPwaDesc').textContent = getText('pwaDesc');
-            document.getElementById('btnPwaInstall').textContent = getText('pwaInstall');
-            document.getElementById('settingsExportLabel').textContent = getText('exportLabel');
-            document.getElementById('settingsExportDesc').textContent = getText('exportDesc');
-            document.getElementById('btnExport').textContent = getText('exportBtn');
-            document.getElementById('settingsImportLabel').textContent = getText('importLabel');
-            document.getElementById('settingsImportDesc').textContent = getText('importDesc');
-            document.getElementById('btnImport').textContent = getText('importBtn');
-            document.getElementById('btnClearData').textContent = getText('clearData');
-            
-            // Обновляем PWA промпт
-            document.querySelector('#pwaInstallPrompt h4').textContent = getText('pwaInstallTitle');
-            document.querySelector('#pwaInstallPrompt p').textContent = getText('pwaInstallMessage');
-            document.querySelector('#pwaInstallPrompt .pwa-buttons .btn:first-child').textContent = '✅ ' + (currentLanguage === 'ru' ? 'Установить' : 'Install');
-            document.querySelector('#pwaInstallPrompt .pwa-buttons .btn:last-child').textContent = '❌ ' + (currentLanguage === 'ru' ? 'Позже' : 'Later');
-            
-            // Обновляем активные кнопки языка
-            document.querySelectorAll('.lang-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            document.getElementById('lang' + (currentLanguage === 'ru' ? 'Ru' : 'En')).classList.add('active');
-            
-            // Перезагружаем контент
-            loadAnimeContent();
-            loadMangaContent();
-            loadStats();
-        }
-
-        function updateStatusTabs() {
-            // Аниме статусы
-            const animeStatuses = ['all', 'watching', 'planned', 'completed', 'dropped'];
-            animeStatuses.forEach(status => {
-                const tab = document.getElementById('animeTab' + status.charAt(0).toUpperCase() + status.slice(1));
-                if (tab) {
-                    const icon = status === 'all' ? '📺' : 
-                                status === 'watching' ? '👀' : 
-                                status === 'planned' ? '📅' : 
-                                status === 'completed' ? '✅' : '❌';
-                    tab.innerHTML = `${icon} ${getText(status)} (<span class="count">0</span>)`;
-                }
-            });
-            
-            // Манга статусы
-            const mangaStatuses = ['all', 'reading', 'planned', 'completed', 'dropped'];
-            mangaStatuses.forEach(status => {
-                const tab = document.getElementById('mangaTab' + status.charAt(0).toUpperCase() + status.slice(1));
-                if (tab) {
-                    const icon = status === 'all' ? '📚' : 
-                                status === 'reading' ? '👀' : 
-                                status === 'planned' ? '📅' : 
-                                status === 'completed' ? '✅' : '❌';
-                    tab.innerHTML = `${icon} ${getText(status)} (<span class="count">0</span>)`;
-                }
-            });
-        }
-
-        // 🔧 СИСТЕМА ТЕМ
-        function setTheme(theme) {
-            currentTheme = theme;
-            document.body.className = theme + '-theme';
-            
-            // Обновляем активные кнопки тем
-            document.querySelectorAll('.theme-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            document.getElementById('theme' + (theme === 'dark' ? 'Dark' : 'Light')).classList.add('active');
-            
-            saveSettings();
-            
-            // Обновляем графики если они есть
-            if (charts.statsChart) {
-                loadStats();
-            }
-        }
-
-        // 🔧 СИСТЕМА ХРАНЕНИЯ ДАННЫХ
-        function getUserId() {
-            if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
-                return tg.initDataUnsafe.user.id.toString();
-            }
-            return 'default_user';
-        }
+        // --- ОСНОВНЫЕ ФУНКЦИИ ---
 
         function loadData() {
-            const userId = getUserId();
-            const key = `${STORAGE_KEY}_${userId}`;
-            try {
-                const data = localStorage.getItem(key);
-                if (data) {
-                    return JSON.parse(data);
-                }
-            } catch (e) {
-                console.error('Error loading data:', e);
-                showNotification(getText('error'), getText('saveError'), 'error');
+            const raw = localStorage.getItem(DB_KEY);
+            if (raw) {
+                try {
+                    appData = JSON.parse(raw);
+                    // Миграция старых данных если нужно
+                    if (!appData.anime) appData.anime = [];
+                    if (!appData.manga) appData.manga = [];
+                    if (!appData.settings) appData.settings = { theme: 'dark', lang: 'ru' };
+                } catch (e) { console.error('Data Error', e); }
             }
+            applySettings();
+        }
+
+        function saveData() {
+            localStorage.setItem(DB_KEY, JSON.stringify(appData));
+            renderStats(); // Обновляем статистику при любом сохранении
+        }
+
+        function addItem(type) {
+            const input = document.getElementById(type + 'Input');
+            const totalInput = document.getElementById(type === 'anime' ? 'animeTotalEp' : 'mangaTotalCh');
+            const statusSelect = document.getElementById(type + 'StatusSelect');
             
-            // Возвращаем структуру по умолчанию
-            return {
-                anime: [],
-                manga: [],
-                settings: {
-                    language: 'ru',
-                    theme: 'dark'
-                },
-                notificationSettings: {
-                    enabled: true,
-                    progressReminders: true,
-                    goalNotifications: true,
-                    frequency: 3
-                }
+            const title = input.value.trim();
+            if (!title) return showNotify('❌ Введите название');
+
+            const newItem = {
+                id: Date.now(),
+                title: title,
+                total: parseInt(totalInput.value) || 0,
+                progress: 0,
+                status: statusSelect.value,
+                rating: 0
             };
-        }
 
-        function saveData(data) {
-            const userId = getUserId();
-            const key = `${STORAGE_KEY}_${userId}`;
-            try {
-                localStorage.setItem(key, JSON.stringify(data));
-                return true;
-            } catch (e) {
-                console.error('Error saving data:', e);
-                showNotification(getText('error'), getText('saveError'), 'error');
-                return false;
-            }
-        }
-
-        function loadSettings() {
-            const data = loadData();
-            if (data.settings) {
-                currentLanguage = data.settings.language || 'ru';
-                currentTheme = data.settings.theme || 'dark';
-            }
-        }
-
-        function saveSettings() {
-            const data = loadData();
-            data.settings = {
-                language: currentLanguage,
-                theme: currentTheme
-            };
-            saveData(data);
-        }
-
-        // 🔧 СИСТЕМА РЕЙТИНГА
-        function initializeRatingSystem() {
-            // Аниме рейтинг
-            const animeStars = document.querySelectorAll('#animeRating .star');
-            animeStars.forEach(star => {
-                star.addEventListener('click', function() {
-                    const value = parseInt(this.getAttribute('data-value'));
-                    currentAnimeRating = value;
-                    
-                    animeStars.forEach((s, index) => {
-                        if (index < value) {
-                            s.classList.add('active');
-                        } else {
-                            s.classList.remove('active');
-                        }
-                    });
-                });
-            });
+            appData[type].unshift(newItem); // Добавляем в начало
+            saveData();
             
-            // Манга рейтинг
-            const mangaStars = document.querySelectorAll('#mangaRating .star');
-            mangaStars.forEach(star => {
-                star.addEventListener('click', function() {
-                    const value = parseInt(this.getAttribute('data-value'));
-                    currentMangaRating = value;
-                    
-                    mangaStars.forEach((s, index) => {
-                        if (index < value) {
-                            s.classList.add('active');
-                        } else {
-                            s.classList.remove('active');
-                        }
-                    });
-                });
-            });
-        }
-
-        // 🔧 СИСТЕМА СТАТУСОВ
-        function initializeStatusTabs() {
-            // Аниме статусы
-            const animeTabs = document.querySelectorAll('#animeStatusTabs .status-tab');
-            animeTabs.forEach(tab => {
-                tab.addEventListener('click', function() {
-                    const status = this.getAttribute('data-status');
-                    
-                    // Обновляем активную вкладку
-                    animeTabs.forEach(t => t.classList.remove('active'));
-                    this.classList.add('active');
-                    currentAnimeStatusTab = status;
-                    
-                    // Показываем соответствующий контент
-                    document.querySelectorAll('#anime .status-content').forEach(content => {
-                        content.classList.remove('active');
-                    });
-                    document.getElementById(`anime${status.charAt(0).toUpperCase() + status.slice(1)}Content`).classList.add('active');
-                    
-                    // Перезагружаем контент
-                    loadAnimeContent();
-                });
-            });
+            // Очистка полей
+            input.value = '';
+            totalInput.value = '';
             
-            // Манга статусы
-            const mangaTabs = document.querySelectorAll('#mangaStatusTabs .status-tab');
-            mangaTabs.forEach(tab => {
-                tab.addEventListener('click', function() {
-                    const status = this.getAttribute('data-status');
-                    
-                    // Обновляем активную вкладку
-                    mangaTabs.forEach(t => t.classList.remove('active'));
-                    this.classList.add('active');
-                    currentMangaStatusTab = status;
-                    
-                    // Показываем соответствующий контент
-                    document.querySelectorAll('#manga .status-content').forEach(content => {
-                        content.classList.remove('active');
-                    });
-                    document.getElementById(`manga${status.charAt(0).toUpperCase() + status.slice(1)}Content`).classList.add('active');
-                    
-                    // Перезагружаем контент
-                    loadMangaContent();
-                });
-            });
-        }
-
-        // 🔧 ФУНКЦИИ ДЛЯ АНИМЕ
-        function addAnime() {
-            const title = document.getElementById('animeTitle').value.trim();
-            const cover = document.getElementById('animeCover').value.trim();
-            const status = document.getElementById('animeStatus').value;
-            const episodes = parseInt(document.getElementById('animeEpisodes').value) || 12;
-            const progress = parseInt(document.getElementById('animeProgress').value) || 0;
-            const rating = currentAnimeRating;
-            
-            if (!title) {
-                showNotification(getText('error'), getText('animeTitle') + ' ' + getText('required'), 'error');
-                return;
-            }
-            
-            const data = loadData();
-            const newAnime = {
-                id: Date.now().toString(),
-                title,
-                cover,
-                status,
-                episodes,
-                progress,
-                rating,
-                createdAt: new Date().toISOString(),
-                lastUpdated: new Date().toISOString()
-            };
-            
-            data.anime = data.anime || [];
-            data.anime.push(newAnime);
-            
-            if (saveData(data)) {
-                showNotification(getText('success'), `"${title}" ` + getText('added'), 'success');
-                resetForm('anime');
-                loadAnimeContent();
-                loadStats();
-                updateStatusCounts();
-            } else {
-                showNotification(getText('error'), getText('saveError'), 'error');
-            }
-        }
-
-        function loadAnimeContent() {
-            const data = loadData();
-            const status = currentAnimeStatusTab;
-            const container = document.getElementById(`anime${status.charAt(0).toUpperCase() + status.slice(1)}Content`);
-            const searchTerm = activeSearchTerms.anime.toLowerCase();
-            
-            if (!data.anime || data.anime.length === 0) {
-                container.innerHTML = getEmptyState('anime', status);
-                updateStatusCounts();
-                return;
-            }
-            
-            // Фильтрация по статусу
-            let filteredAnime = data.anime;
-            if (status !== 'all') {
-                filteredAnime = data.anime.filter(anime => anime.status === status);
-            }
-            
-            // Фильтрация по поиску
-            if (searchTerm) {
-                filteredAnime = filteredAnime.filter(anime => 
-                    anime.title.toLowerCase().includes(searchTerm)
-                );
-            }
-            
-            if (filteredAnime.length === 0) {
-                container.innerHTML = getEmptyState('anime', status, true);
-            } else {
-                container.innerHTML = filteredAnime.map(anime => renderAnimeItem(anime)).join('');
-            }
-            
-            updateStatusCounts();
-        }
-
-        function renderAnimeItem(anime) {
-            const progressPercent = anime.episodes > 0 ? Math.round((anime.progress / anime.episodes) * 100) : 0;
-            const statusText = getStatusText(anime.status);
-            const ratingStars = renderRatingStars(anime.rating);
-            const isCompleted = anime.progress >= anime.episodes && anime.episodes > 0;
-            
-            return `
-                <div class="item-card" data-id="${anime.id}">
-                    <div class="item-header">
-                        ${anime.cover ? 
-                            `<img src="${anime.cover}" class="item-cover" alt="${anime.title}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">` :
-                            ''
-                        }
-                        <div class="no-cover" style="${anime.cover ? 'display: none;' : ''}">🎬<br>${getText('noCover')}</div>
-                        <div class="item-info">
-                            <div class="item-title">${anime.title} ${isCompleted ? '<span class="completion-badge">' + getText('completed') + '</span>' : ''}</div>
-                            <div class="item-meta">
-                                ${getText('status')}: ${statusText}<br>
-                                ${getText('watchedEpisodes')}: ${anime.progress}/${anime.episodes}
-                            </div>
-                            <div class="rating">
-                                ${ratingStars}
-                            </div>
-                            <div class="progress-bar">
-                                <div class="progress-fill" style="width: ${progressPercent}%"></div>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-color); opacity: 0.7;">
-                                <span>${getText('progress')}</span>
-                                <span>${progressPercent}%</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="item-actions">
-                        <button class="action-btn btn-progress" onclick="updateProgress('anime', '${anime.id}', ${anime.progress + 1})">+1</button>
-                        <button class="action-btn btn-edit" onclick="editItem('anime', '${anime.id}')">${getText('edit')}</button>
-                        <button class="action-btn btn-delete" onclick="deleteItem('anime', '${anime.id}')">${getText('delete')}</button>
-                    </div>
-                    ${!isCompleted ? `
-                    <div class="quick-progress">
-                        <button class="quick-progress-btn" onclick="updateProgress('anime', '${anime.id}', ${anime.progress + 5})">+5</button>
-                        <button class="quick-progress-btn" onclick="updateProgress('anime', '${anime.id}', ${anime.progress + 10})">+10</button>
-                        <button class="quick-progress-btn" onclick="showProgressModal('anime', '${anime.id}', ${anime.progress}, ${anime.episodes})">${getText('progress')}</button>
-                    </div>
-                    ` : ''}
-                </div>
-            `;
-        }
-
-        // 🔧 ФУНКЦИИ ДЛЯ МАНГИ
-        function addManga() {
-            const title = document.getElementById('mangaTitle').value.trim();
-            const cover = document.getElementById('mangaCover').value.trim();
-            const status = document.getElementById('mangaStatus').value;
-            const chapters = parseInt(document.getElementById('mangaChapters').value) || 50;
-            const progress = parseInt(document.getElementById('mangaProgress').value) || 0;
-            const rating = currentMangaRating;
-            
-            if (!title) {
-                showNotification(getText('error'), getText('mangaTitle') + ' ' + getText('required'), 'error');
-                return;
-            }
-            
-            const data = loadData();
-            const newManga = {
-                id: Date.now().toString(),
-                title,
-                cover,
-                status,
-                chapters,
-                progress,
-                rating,
-                createdAt: new Date().toISOString(),
-                lastUpdated: new Date().toISOString()
-            };
-            
-            data.manga = data.manga || [];
-            data.manga.push(newManga);
-            
-            if (saveData(data)) {
-                showNotification(getText('success'), `"${title}" ` + getText('added'), 'success');
-                resetForm('manga');
-                loadMangaContent();
-                loadStats();
-                updateStatusCounts();
-            } else {
-                showNotification(getText('error'), getText('saveError'), 'error');
-            }
-        }
-
-        function loadMangaContent() {
-            const data = loadData();
-            const status = currentMangaStatusTab;
-            const container = document.getElementById(`manga${status.charAt(0).toUpperCase() + status.slice(1)}Content`);
-            const searchTerm = activeSearchTerms.manga.toLowerCase();
-            
-            if (!data.manga || data.manga.length === 0) {
-                container.innerHTML = getEmptyState('manga', status);
-                updateStatusCounts();
-                return;
-            }
-            
-            // Фильтрация по статусу
-            let filteredManga = data.manga;
-            if (status !== 'all') {
-                filteredManga = data.manga.filter(manga => manga.status === status);
-            }
-            
-            // Фильтрация по поиску
-            if (searchTerm) {
-                filteredManga = filteredManga.filter(manga => 
-                    manga.title.toLowerCase().includes(searchTerm)
-                );
-            }
-            
-            if (filteredManga.length === 0) {
-                container.innerHTML = getEmptyState('manga', status, true);
-            } else {
-                container.innerHTML = filteredManga.map(manga => renderMangaItem(manga)).join('');
-            }
-            
-            updateStatusCounts();
-        }
-
-        function renderMangaItem(manga) {
-            const progressPercent = manga.chapters > 0 ? Math.round((manga.progress / manga.chapters) * 100) : 0;
-            const statusText = getStatusText(manga.status);
-            const ratingStars = renderRatingStars(manga.rating);
-            const isCompleted = manga.progress >= manga.chapters && manga.chapters > 0;
-            
-            return `
-                <div class="item-card" data-id="${manga.id}">
-                    <div class="item-header">
-                        ${manga.cover ? 
-                            `<img src="${manga.cover}" class="item-cover" alt="${manga.title}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">` :
-                            ''
-                        }
-                        <div class="no-cover" style="${manga.cover ? 'display: none;' : ''}">📚<br>${getText('noCover')}</div>
-                        <div class="item-info">
-                            <div class="item-title">${manga.title} ${isCompleted ? '<span class="completion-badge">' + getText('completed') + '</span>' : ''}</div>
-                            <div class="item-meta">
-                                ${getText('status')}: ${statusText}<br>
-                                ${getText('readChapters')}: ${manga.progress}/${manga.chapters}
-                            </div>
-                            <div class="rating">
-                                ${ratingStars}
-                            </div>
-                            <div class="progress-bar">
-                                <div class="progress-fill" style="width: ${progressPercent}%"></div>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-color); opacity: 0.7;">
-                                <span>${getText('progress')}</span>
-                                <span>${progressPercent}%</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="item-actions">
-                        <button class="action-btn btn-progress" onclick="updateProgress('manga', '${manga.id}', ${manga.progress + 1})">+1</button>
-                        <button class="action-btn btn-edit" onclick="editItem('manga', '${manga.id}')">${getText('edit')}</button>
-                        <button class="action-btn btn-delete" onclick="deleteItem('manga', '${manga.id}')">${getText('delete')}</button>
-                    </div>
-                    ${!isCompleted ? `
-                    <div class="quick-progress">
-                        <button class="quick-progress-btn" onclick="updateProgress('manga', '${manga.id}', ${manga.progress + 5})">+5</button>
-                        <button class="quick-progress-btn" onclick="updateProgress('manga', '${manga.id}', ${manga.progress + 10})">+10</button>
-                        <button class="quick-progress-btn" onclick="showProgressModal('manga', '${manga.id}', ${manga.progress}, ${manga.chapters})">${getText('progress')}</button>
-                    </div>
-                    ` : ''}
-                </div>
-            `;
-        }
-
-        // 🔧 ОБЩИЕ ФУНКЦИИ
-        function showSection(sectionName) {
-            // Скрываем все секции
-            document.querySelectorAll('.section').forEach(section => {
-                section.classList.remove('active');
-            });
-            
-            // Убираем активный класс со всех табов
-            document.querySelectorAll('.tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            
-            // Показываем выбранную секцию
-            document.getElementById(sectionName).classList.add('active');
-            
-            // Активируем соответствующий таб
-            document.querySelectorAll('.tab').forEach(tab => {
-                if (tab.textContent.includes(getSectionText(sectionName))) {
-                    tab.classList.add('active');
-                }
-            });
-            
-            // Специальные действия для секций
-            if (sectionName === 'stats') {
-                loadStats();
-            } else if (sectionName === 'anime') {
-                loadAnimeContent();
-            } else if (sectionName === 'manga') {
-                loadMangaContent();
-            }
-        }
-
-        function getSectionText(sectionName) {
-            const texts = {
-                'anime': getText('anime'),
-                'manga': getText('manga'),
-                'stats': getText('stats'),
-                'settings': getText('settings')
-            };
-            return texts[sectionName] || '';
-        }
-
-        function getStatusText(status) {
-            const statuses = {
-                'watching': getText('watching'),
-                'reading': getText('reading'),
-                'planned': getText('planned'),
-                'completed': getText('completed'),
-                'dropped': getText('dropped')
-            };
-            return statuses[status] || status;
-        }
-
-        function renderRatingStars(rating) {
-            return [1,2,3,4,5].map(i => 
-                `<span class="star ${i <= rating ? 'active' : ''}">★</span>`
-            ).join('');
-        }
-
-        function resetForm(type) {
-            if (type === 'anime') {
-                document.getElementById('animeTitle').value = '';
-                document.getElementById('animeCover').value = '';
-                document.getElementById('animeProgress').value = '0';
-                document.getElementById('animeCoverPreview').style.display = 'none';
-                currentAnimeRating = 0;
-                document.querySelectorAll('#animeRating .star').forEach(star => {
-                    star.classList.remove('active');
-                });
-            } else if (type === 'manga') {
-                document.getElementById('mangaTitle').value = '';
-                document.getElementById('mangaCover').value = '';
-                document.getElementById('mangaProgress').value = '0';
-                document.getElementById('mangaCoverPreview').style.display = 'none';
-                currentMangaRating = 0;
-                document.querySelectorAll('#mangaRating .star').forEach(star => {
-                    star.classList.remove('active');
-                });
-            }
-        }
-
-        function previewCover(type) {
-            const url = document.getElementById(type + 'Cover').value;
-            const preview = document.getElementById(type + 'CoverPreview');
-            
-            if (url) {
-                preview.src = url;
-                preview.style.display = 'block';
-            } else {
-                preview.style.display = 'none';
-            }
-        }
-
-        function updateProgress(type, id, newProgress) {
-            const data = loadData();
-            const items = type === 'anime' ? data.anime : data.manga;
-            const item = items.find(item => item.id === id);
-            
-            if (item) {
-                const total = type === 'anime' ? item.episodes : item.chapters;
-                const oldProgress = item.progress;
-                item.progress = Math.min(newProgress, total);
-                item.lastUpdated = new Date().toISOString();
-                
-                // Автоматическое обновление статуса при завершении
-                if (item.progress >= total && item.status !== 'completed') {
-                    item.status = 'completed';
-                    showNotification('🎉 ' + getText('success'), `"${item.title}" ${getText('completed')}!`, 'success');
-                }
-                
-                // Уведомление о значительном прогрессе
-                if (item.progress > oldProgress) {
-                    const progressMade = item.progress - oldProgress;
-                    if (progressMade >= 3) {
-                        showNotification('🚀 ' + getText('success'), `${getText('progress')}: +${progressMade} ${type === 'anime' ? getText('watchedEpisodes') : getText('readChapters')}`, 'info');
-                    }
-                }
-                
-                if (saveData(data)) {
-                    if (type === 'anime') {
-                        loadAnimeContent();
-                    } else {
-                        loadMangaContent();
-                    }
-                    loadStats();
-                    updateStatusCounts();
-                }
-            }
-        }
-
-        function editItem(type, id) {
-            const data = loadData();
-            const items = type === 'anime' ? data.anime : data.manga;
-            const item = items.find(item => item.id === id);
-            
-            if (item) {
-                // Создаем форму редактирования
-                const progressPercent = type === 'anime' ? 
-                    (item.episodes > 0 ? Math.round((item.progress / item.episodes) * 100) : 0) :
-                    (item.chapters > 0 ? Math.round((item.progress / item.chapters) * 100) : 0);
-                
-                const editForm = `
-                    <div class="edit-form">
-                        <h4 style="color: var(--accent-color); margin-bottom: 15px;">${getText('edit')} "${item.title}"</h4>
-                        <div class="form-group">
-                            <label>${getText(type + 'Title')}</label>
-                            <input type="text" id="edit${type.charAt(0).toUpperCase() + type.slice(1)}Title" class="form-control" value="${item.title}">
-                        </div>
-                        <div class="form-group">
-                            <label>${getText('coverLink')}</label>
-                            <input type="text" id="edit${type.charAt(0).toUpperCase() + type.slice(1)}Cover" class="form-control" value="${item.cover || ''}" onchange="previewEditCover('${type}')">
-                            <img id="edit${type.charAt(0).toUpperCase() + type.slice(1)}CoverPreview" class="cover-preview" src="${item.cover || ''}" style="${item.cover ? 'display: block;' : 'display: none;'}" alt="Предпросмотр обложки">
-                        </div>
-                        <div class="form-group">
-                            <label>${getText('status')}</label>
-                            <select id="edit${type.charAt(0).toUpperCase() + type.slice(1)}Status" class="form-control">
-                                <option value="${type === 'anime' ? 'watching' : 'reading'}" ${item.status === (type === 'anime' ? 'watching' : 'reading') ? 'selected' : ''}>${getText(type === 'anime' ? 'watching' : 'reading')}</option>
-                                <option value="planned" ${item.status === 'planned' ? 'selected' : ''}>${getText('planned')}</option>
-                                <option value="completed" ${item.status === 'completed' ? 'selected' : ''}>${getText('completed')}</option>
-                                <option value="dropped" ${item.status === 'dropped' ? 'selected' : ''}>${getText('dropped')}</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>${type === 'anime' ? getText('totalEpisodes') : getText('totalChapters')}</label>
-                            <input type="number" id="edit${type.charAt(0).toUpperCase() + type.slice(1)}Total" class="form-control" value="${type === 'anime' ? item.episodes : item.chapters}" min="1">
-                        </div>
-                        <div class="form-group">
-                            <label>${type === 'anime' ? getText('watchedEpisodes') : getText('readChapters')}</label>
-                            <input type="number" id="edit${type.charAt(0).toUpperCase() + type.slice(1)}Progress" class="form-control" value="${item.progress}" min="0">
-                        </div>
-                        <div class="form-group">
-                            <label>${getText('rating')}</label>
-                            <div class="rating" id="edit${type.charAt(0).toUpperCase() + type.slice(1)}Rating">
-                                <span class="star ${item.rating >= 1 ? 'active' : ''}" data-value="1">★</span>
-                                <span class="star ${item.rating >= 2 ? 'active' : ''}" data-value="2">★</span>
-                                <span class="star ${item.rating >= 3 ? 'active' : ''}" data-value="3">★</span>
-                                <span class="star ${item.rating >= 4 ? 'active' : ''}" data-value="4">★</span>
-                                <span class="star ${item.rating >= 5 ? 'active' : ''}" data-value="5">★</span>
-                            </div>
-                        </div>
-                        <div class="edit-actions">
-                            <button class="btn btn-save" onclick="save${type.charAt(0).toUpperCase() + type.slice(1)}Edit('${item.id}')">💾 ${getText('save')}</button>
-                            <button class="btn btn-cancel" onclick="cancelEdit('${type}', '${item.id}')">❌ ${getText('cancel')}</button>
-                        </div>
-                    </div>
-                `;
-                
-                // Заменяем карточку формой редактирования
-                const card = document.querySelector(`.item-card[data-id="${id}"]`);
-                card.outerHTML = editForm;
-                
-                // Инициализируем рейтинг для редактирования
-                initializeEditRating(type, item.id, item.rating);
-            }
-        }
-
-        function initializeEditRating(type, id, rating) {
-            const stars = document.querySelectorAll(`#edit${type.charAt(0).toUpperCase() + type.slice(1)}Rating .star`);
-            let currentRating = rating;
-            
-            stars.forEach(star => {
-                star.addEventListener('click', function() {
-                    const value = parseInt(this.getAttribute('data-value'));
-                    currentRating = value;
-                    
-                    stars.forEach((s, index) => {
-                        if (index < value) {
-                            s.classList.add('active');
-                        } else {
-                            s.classList.remove('active');
-                        }
-                    });
-                    
-                    // Сохраняем рейтинг в глобальной переменной
-                    if (type === 'anime') {
-                        currentAnimeRating = value;
-                    } else {
-                        currentMangaRating = value;
-                    }
-                });
-            });
-        }
-
-        function saveAnimeEdit(id) {
-            const title = document.getElementById('editAnimeTitle').value.trim();
-            const cover = document.getElementById('editAnimeCover').value.trim();
-            const status = document.getElementById('editAnimeStatus').value;
-            const episodes = parseInt(document.getElementById('editAnimeTotal').value) || 12;
-            const progress = parseInt(document.getElementById('editAnimeProgress').value) || 0;
-            const rating = currentAnimeRating;
-            
-            if (!title) {
-                showNotification(getText('error'), getText('animeTitle') + ' ' + getText('required'), 'error');
-                return;
-            }
-            
-            const data = loadData();
-            const anime = data.anime.find(a => a.id === id);
-            
-            if (anime) {
-                anime.title = title;
-                anime.cover = cover;
-                anime.status = status;
-                anime.episodes = episodes;
-                anime.progress = progress;
-                anime.rating = rating;
-                anime.lastUpdated = new Date().toISOString();
-                
-                if (saveData(data)) {
-                    showNotification(getText('success'), `"${title}" ` + getText('updated'), 'success');
-                    loadAnimeContent();
-                    loadStats();
-                    updateStatusCounts();
-                }
-            }
-        }
-
-        function saveMangaEdit(id) {
-            const title = document.getElementById('editMangaTitle').value.trim();
-            const cover = document.getElementById('editMangaCover').value.trim();
-            const status = document.getElementById('editMangaStatus').value;
-            const chapters = parseInt(document.getElementById('editMangaTotal').value) || 50;
-            const progress = parseInt(document.getElementById('editMangaProgress').value) || 0;
-            const rating = currentMangaRating;
-            
-            if (!title) {
-                showNotification(getText('error'), getText('mangaTitle') + ' ' + getText('required'), 'error');
-                return;
-            }
-            
-            const data = loadData();
-            const manga = data.manga.find(m => m.id === id);
-            
-            if (manga) {
-                manga.title = title;
-                manga.cover = cover;
-                manga.status = status;
-                manga.chapters = chapters;
-                manga.progress = progress;
-                manga.rating = rating;
-                manga.lastUpdated = new Date().toISOString();
-                
-                if (saveData(data)) {
-                    showNotification(getText('success'), `"${title}" ` + getText('updated'), 'success');
-                    loadMangaContent();
-                    loadStats();
-                    updateStatusCounts();
-                }
-            }
-        }
-
-        function cancelEdit(type, id) {
-            // Просто перезагружаем контент
-            if (type === 'anime') {
-                loadAnimeContent();
-            } else {
-                loadMangaContent();
-            }
+            renderList(type);
+            showNotify('✅ Добавлено: ' + title);
         }
 
         function deleteItem(type, id) {
-            if (confirm(getText('confirmDelete'))) {
-                const data = loadData();
-                if (type === 'anime') {
-                    data.anime = data.anime.filter(item => item.id !== id);
-                } else {
-                    data.manga = data.manga.filter(item => item.id !== id);
-                }
-                
-                if (saveData(data)) {
-                    showNotification(getText('success'), getText('deleted'), 'success');
-                    if (type === 'anime') {
-                        loadAnimeContent();
-                    } else {
-                        loadMangaContent();
-                    }
-                    loadStats();
-                    updateStatusCounts();
-                }
+            if (confirm(getText('deleteConfirm'))) {
+                appData[type] = appData[type].filter(i => i.id !== id);
+                saveData();
+                renderList(type);
             }
         }
 
-        function searchItems(type) {
-            const searchTerm = document.getElementById(type + 'Search').value;
-            activeSearchTerms[type] = searchTerm;
-            
-            if (type === 'anime') {
-                loadAnimeContent();
-            } else {
-                loadMangaContent();
+        function updateProgress(type, id, change) {
+            const item = appData[type].find(i => i.id === id);
+            if (item) {
+                item.progress += change;
+                if (item.progress < 0) item.progress = 0;
+                if (item.total > 0 && item.progress >= item.total) {
+                    item.status = 'completed';
+                    showNotify('🎉 Поздравляю с завершением!');
+                }
+                saveData();
+                renderList(type); // Перерисовываем только список
             }
         }
 
-        function updateStatusCounts() {
-            const data = loadData();
-            
-            // Аниме счетчики
-            const animeStatuses = ['all', 'watching', 'planned', 'completed', 'dropped'];
-            animeStatuses.forEach(status => {
-                let count = 0;
-                if (status === 'all') {
-                    count = data.anime ? data.anime.length : 0;
-                } else {
-                    count = data.anime ? data.anime.filter(anime => anime.status === status).length : 0;
-                }
-                
-                const countElement = document.querySelector(`#animeTab${status.charAt(0).toUpperCase() + status.slice(1)} .count`);
-                if (countElement) {
-                    countElement.textContent = count;
-                }
-            });
-            
-            // Манга счетчики
-            const mangaStatuses = ['all', 'reading', 'planned', 'completed', 'dropped'];
-            mangaStatuses.forEach(status => {
-                let count = 0;
-                if (status === 'all') {
-                    count = data.manga ? data.manga.length : 0;
-                } else {
-                    count = data.manga ? data.manga.filter(manga => manga.status === status).length : 0;
-                }
-                
-                const countElement = document.querySelector(`#mangaTab${status.charAt(0).toUpperCase() + status.slice(1)} .count`);
-                if (countElement) {
-                    countElement.textContent = count;
-                }
-            });
+        function updateRating(type, id, rating) {
+            const item = appData[type].find(i => i.id === id);
+            if (item) {
+                item.rating = rating;
+                saveData();
+                renderList(type);
+            }
         }
 
-        function getEmptyState(type, status, isFiltered = false) {
-            const typeName = type === 'anime' ? getText('anime') : getText('manga');
-            const statusConfig = {
-                all: { 
-                    icon: type === 'anime' ? '📺' : '📚', 
-                    title: getText('noItems'), 
-                    message: getText('addFirstItem') + ' ' + typeName.toLowerCase()
-                },
-                watching: { 
-                    icon: '👀', 
-                    title: type === 'anime' ? getText('noWatching') : getText('noReading'), 
-                    message: type === 'anime' ? getText('continueWatching') : getText('continueReading')
-                },
-                reading: { 
-                    icon: '👀', 
-                    title: getText('noReading'), 
-                    message: getText('continueReading')
-                },
-                planned: { 
-                    icon: '📅', 
-                    title: getText('noPlanned'), 
-                    message: getText('addToPlanned')
-                },
-                completed: { 
-                    icon: '✅', 
-                    title: getText('noCompleted'), 
-                    message: getText('completeItems')
-                },
-                dropped: { 
-                    icon: '❌', 
-                    title: getText('noDropped'), 
-                    message: getText('dropItems')
+        // --- ОТРИСОВКА ИНТЕРФЕЙСА ---
+
+        function renderAll() {
+            renderFilters('anime');
+            renderFilters('manga');
+            renderList('anime');
+            renderList('manga');
+            renderStats();
+        }
+
+        function renderFilters(type) {
+            const container = document.getElementById(type + 'Filters');
+            const statuses = ['all', 'watching', 'reading', 'planned', 'completed', 'dropped'];
+            
+            // Убираем watching для манги и reading для аниме
+            const validStatuses = statuses.filter(s => {
+                if (type === 'anime' && s === 'reading') return false;
+                if (type === 'manga' && s === 'watching') return false;
+                return true;
+            });
+
+            container.innerHTML = validStatuses.map(status => {
+                const label = getStatusLabel(status);
+                const activeClass = currentFilter[type] === status ? 'active' : '';
+                // Считаем количество
+                let count = 0;
+                if (status === 'all') count = appData[type].length;
+                else count = appData[type].filter(i => i.status === status).length;
+
+                return `<div class="status-chip ${activeClass}" onclick="setFilter('${type}', '${status}')">${label} (${count})</div>`;
+            }).join('');
+        }
+
+        function setFilter(type, status) {
+            currentFilter[type] = status;
+            renderFilters(type);
+            renderList(type);
+        }
+
+        function renderList(type) {
+            const listEl = document.getElementById(type + 'List');
+            const items = appData[type].filter(item => {
+                if (currentFilter[type] === 'all') return true;
+                return item.status === currentFilter[type];
+            });
+
+            if (items.length === 0) {
+                listEl.innerHTML = `<div style="text-align:center; opacity:0.5; padding:20px;">${getText('empty')}</div>`;
+                return;
+            }
+
+            listEl.innerHTML = items.map(item => {
+                const percent = item.total > 0 ? Math.min((item.progress / item.total) * 100, 100) : 0;
+                const statusLabel = getStatusLabel(item.status);
+                const unit = type === 'anime' ? getText('ep') : getText('ch');
+                
+                // Генерация звезд
+                let starsHtml = '';
+                for(let i=1; i<=5; i++) {
+                    starsHtml += `<span class="${i <= item.rating ? 'active' : ''}" onclick="updateRating('${type}', ${item.id}, ${i})">★</span>`;
                 }
-            };
-            
-            const config = statusConfig[status] || statusConfig.all;
-            
-            if (isFiltered) {
+
                 return `
-                    <div class="empty-state">
-                        <div class="icon">🔍</div>
-                        <h4>${getText('noResults')}</h4>
-                        <p>${getText('tryChangingSearch')}</p>
+                <div class="item-card">
+                    <div class="item-main">
+                        <div class="item-info">
+                            <div class="item-title">${item.title}</div>
+                            <div class="item-meta">${statusLabel} • ${item.progress} / ${item.total || '?'} ${unit}</div>
+                            <div class="progress-container">
+                                <div class="progress-fill" style="width: ${percent}%"></div>
+                            </div>
+                        </div>
+                        <div class="rating rating-input">${starsHtml}</div>
                     </div>
-                `;
-            }
-            
-            return `
-                <div class="empty-state">
-                    <div class="icon">${config.icon}</div>
-                    <h4>${config.title}</h4>
-                    <p>${config.message}</p>
-                </div>
-            `;
+                    
+                    <div class="quick-progress">
+                        <button class="qp-btn" onclick="updateProgress('${type}', ${item.id}, 1)">+1</button>
+                        <button class="qp-btn" onclick="updateProgress('${type}', ${item.id}, 5)">+5</button>
+                         <button class="qp-btn" onclick="updateProgress('${type}', ${item.id}, -1)">-1</button>
+                        <button class="qp-btn" style="border-color:#ff4757; color:#ff4757" onclick="deleteItem('${type}', ${item.id})">🗑️</button>
+                    </div>
+                </div>`;
+            }).join('');
         }
 
-        // 🔧 СТАТИСТИКА
-        function loadStats() {
-            const data = loadData();
-            
-            // Обновляем основные цифры
-            const totalAnime = data.anime ? data.anime.length : 0;
-            const totalManga = data.manga ? data.manga.length : 0;
-            const completedAnime = data.anime ? data.anime.filter(a => a.status === 'completed').length : 0;
-            const completedManga = data.manga ? data.manga.filter(m => m.status === 'completed').length : 0;
-            
-            document.getElementById('totalAnime').textContent = totalAnime;
-            document.getElementById('totalManga').textContent = totalManga;
-            document.getElementById('completedAnime').textContent = completedAnime;
-            document.getElementById('completedManga').textContent = completedManga;
-            
-            // Создаем график
+        function renderStats() {
+            document.getElementById('statAnimeCount').innerText = appData.anime.length;
+            document.getElementById('statMangaCount').innerText = appData.manga.length;
+
             const ctx = document.getElementById('statsChart').getContext('2d');
             
-            // Уничтожаем предыдущий график если есть
-            if (charts.statsChart) {
-                charts.statsChart.destroy();
-            }
-            
-            // Подготавливаем данные для графика
-            const animeByStatus = {
-                watching: data.anime ? data.anime.filter(a => a.status === 'watching').length : 0,
-                planned: data.anime ? data.anime.filter(a => a.status === 'planned').length : 0,
-                completed: completedAnime,
-                dropped: data.anime ? data.anime.filter(a => a.status === 'dropped').length : 0
-            };
-            
-            const mangaByStatus = {
-                reading: data.manga ? data.manga.filter(m => m.status === 'reading').length : 0,
-                planned: data.manga ? data.manga.filter(m => m.status === 'planned').length : 0,
-                completed: completedManga,
-                dropped: data.manga ? data.manga.filter(m => m.status === 'dropped').length : 0
-            };
-            
-            charts.statsChart = new Chart(ctx, {
+            // Данные для графика
+            const s = { watch: 0, plan: 0, done: 0, drop: 0 };
+            [...appData.anime, ...appData.manga].forEach(i => {
+                if (i.status === 'watching' || i.status === 'reading') s.watch++;
+                else if (i.status === 'planned') s.plan++;
+                else if (i.status === 'completed') s.done++;
+                else if (i.status === 'dropped') s.drop++;
+            });
+
+            if (window.myChart) window.myChart.destroy();
+            window.myChart = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
-                    labels: [
-                        getText('watching'), 
-                        getText('reading'), 
-                        getText('planned'), 
-                        getText('completed'), 
-                        getText('dropped')
-                    ],
+                    labels: [getText('watch'), getText('plan'), getText('done'), getText('drop')],
                     datasets: [{
-                        data: [
-                            animeByStatus.watching,
-                            mangaByStatus.reading,
-                            animeByStatus.planned + mangaByStatus.planned,
-                            animeByStatus.completed + mangaByStatus.completed,
-                            animeByStatus.dropped + mangaByStatus.dropped
-                        ],
-                        backgroundColor: [
-                            'rgba(102, 126, 234, 0.8)',
-                            'rgba(118, 75, 162, 0.8)',
-                            'rgba(255, 159, 64, 0.8)',
-                            'rgba(75, 192, 192, 0.8)',
-                            'rgba(255, 99, 132, 0.8)'
-                        ],
-                        borderColor: [
-                            'rgba(102, 126, 234, 1)',
-                            'rgba(118, 75, 162, 1)',
-                            'rgba(255, 159, 64, 1)',
-                            'rgba(75, 192, 192, 1)',
-                            'rgba(255, 99, 132, 1)'
-                        ],
-                        borderWidth: 2
+                        data: [s.watch, s.plan, s.done, s.drop],
+                        backgroundColor: ['#667eea', '#f6e58d', '#6ab04c', '#ff4757'],
+                        borderWidth: 0
                     }]
                 },
                 options: {
                     responsive: true,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                color: getComputedStyle(document.body).getPropertyValue('--text-color'),
-                                padding: 20,
-                                font: {
-                                    size: 12
-                                }
-                            }
-                        },
-                        title: {
-                            display: true,
-                            text: getText('distributionByStatus'),
-                            color: getComputedStyle(document.body).getPropertyValue('--text-color'),
-                            font: {
-                                size: 16,
-                                weight: 'bold'
-                            }
-                        }
-                    },
-                    cutout: '60%'
+                    plugins: { legend: { position: 'bottom', labels: { color: getComputedStyle(document.body).getPropertyValue('--text-color') } } }
                 }
             });
         }
 
-        // 🔧 УПРАВЛЕНИЕ ДАННЫМИ
-        function exportData() {
-            const data = loadData();
-            const dataStr = JSON.stringify(data, null, 2);
-            const blob = new Blob([dataStr], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
+        // --- УТИЛИТЫ ---
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
             
+            document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+            // Ищем кнопку, которая вызывает этот таб (просто по тексту или индексу сложно, сделаем проще)
+            const buttons = document.querySelectorAll('.tab');
+            if(tabId === 'anime') buttons[0].classList.add('active');
+            if(tabId === 'manga') buttons[1].classList.add('active');
+            if(tabId === 'stats') buttons[2].classList.add('active');
+            if(tabId === 'settings') buttons[3].classList.add('active');
+        }
+
+        function showNotify(msg) {
+            const n = document.getElementById('notification');
+            document.getElementById('notif-msg').innerText = msg;
+            n.classList.add('show');
+            setTimeout(() => n.classList.remove('show'), 3000);
+        }
+
+        function getText(key) {
+            return i18n[appData.settings.lang][key] || key;
+        }
+
+        function getStatusLabel(status) {
+            const map = {
+                'all': 'Все', 'watching': getText('watch'), 'reading': getText('watch'),
+                'planned': getText('plan'), 'completed': getText('done'), 'dropped': getText('drop')
+            };
+            return map[status] || status;
+        }
+
+        // --- НАСТРОЙКИ ---
+
+        function applySettings() {
+            const s = appData.settings;
+            document.body.className = s.theme === 'light' ? 'light-theme' : '';
+            document.getElementById('themeToggle').checked = s.theme === 'dark';
+            document.getElementById('langToggle').checked = s.lang === 'en';
+            
+            // Перерисовка текстов
+            const tabs = document.querySelectorAll('.tab');
+            tabs[0].innerText = '🎬 ' + getText('anime');
+            tabs[1].innerText = '📚 ' + getText('manga');
+            tabs[2].innerText = '📊 ' + getText('stats');
+            tabs[3].innerText = '⚙️ ' + getText('settings');
+            
+            renderFilters('anime');
+            renderFilters('manga');
+            renderStats();
+        }
+
+        function toggleTheme() {
+            appData.settings.theme = document.getElementById('themeToggle').checked ? 'dark' : 'light';
+            saveData();
+            applySettings();
+        }
+
+        function toggleLang() {
+            appData.settings.lang = document.getElementById('langToggle').checked ? 'en' : 'ru';
+            saveData();
+            applySettings();
+        }
+
+        function exportData() {
+            const dataStr = JSON.stringify(appData);
+            const blob = new Blob([dataStr], {type: "application/json"});
+            const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `animanga-tracker-backup-${new Date().toISOString().split('T')[0]}.json`;
+            a.download = "animanga_backup.json";
             document.body.appendChild(a);
             a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            
-            showNotification(getText('success'), getText('dataExported'), 'success');
+            showNotify('📥 Файл скачивается...');
         }
 
-        function importData() {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = '.json';
-            
-            input.onchange = function(e) {
-                const file = e.target.files[0];
-                if (!file) return;
-                
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    try {
-                        const data = JSON.parse(e.target.result);
-                        if (confirm(currentLanguage === 'ru' ? 'Заменить текущие данные?' : 'Replace current data?')) {
-                            const userId = getUserId();
-                            const key = `${STORAGE_KEY}_${userId}`;
-                            localStorage.setItem(key, JSON.stringify(data));
-                            showNotification(getText('success'), getText('dataImported'), 'success');
-                            
-                            // Перезагружаем настройки и контент
-                            loadSettings();
-                            updateUI();
-                            setTheme(currentTheme);
-                            
-                            loadAnimeContent();
-                            loadMangaContent();
-                            loadStats();
-                            updateStatusCounts();
-                        }
-                    } catch (error) {
-                        showNotification(getText('error'), getText('invalidFile'), 'error');
-                    }
-                };
-                reader.readAsText(file);
-            };
-            
-            input.click();
-        }
-
-        function clearAllData() {
-            if (confirm(getText('confirmClearData'))) {
-                const userId = getUserId();
-                const key = `${STORAGE_KEY}_${userId}`;
-                localStorage.removeItem(key);
-                showNotification(getText('success'), getText('allDataDeleted'), 'success');
-                
-                // Перезагружаем контент
-                loadAnimeContent();
-                loadMangaContent();
-                loadStats();
-                updateStatusCounts();
-            }
-        }
-
-        // 🔧 СИСТЕМА УВЕДОМЛЕНИЙ
-        function showNotification(title, message, type = 'info', duration = 5000) {
-            const notificationsPanel = document.getElementById('notificationsPanel');
-            
-            const notification = document.createElement('div');
-            notification.className = `notification ${type}`;
-            notification.innerHTML = `
-                <div class="notification-title">${title}</div>
-                <div class="notification-message">${message}</div>
-            `;
-            
-            notificationsPanel.appendChild(notification);
-            
-            // Автоматическое скрытие
-            if (duration > 0) {
-                setTimeout(() => {
-                    if (notification.parentNode) {
-                        notification.style.animation = 'slideInRight 0.3s ease reverse';
-                        setTimeout(() => {
-                            if (notification.parentNode) {
-                                notification.remove();
-                            }
-                        }, 300);
-                    }
-                }, duration);
-            }
-            
-            return notification;
-        }
-
-        // 🔧 ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
-        function previewEditCover(type) {
-            const url = document.getElementById(`edit${type.charAt(0).toUpperCase() + type.slice(1)}Cover`).value;
-            const preview = document.getElementById(`edit${type.charAt(0).toUpperCase() + type.slice(1)}CoverPreview`);
-            
-            if (url) {
-                preview.src = url;
-                preview.style.display = 'block';
-            } else {
-                preview.style.display = 'none';
-            }
-        }
-
-        function showProgressModal(type, id, currentProgress, maxProgress) {
-            const modalHTML = `
-                <div class="edit-form">
-                    <h4 style="color: var(--accent-color); margin-bottom: 15px;">${getText('progress')}</h4>
-                    <div class="progress-controls">
-                        <button class="progress-btn" onclick="updateProgress('${type}', '${id}', ${currentProgress - 1})">-1</button>
-                        <input type="number" id="progressInput" class="progress-input" value="${currentProgress}" min="0" max="${maxProgress}">
-                        <button class="progress-btn" onclick="updateProgress('${type}', '${id}', ${currentProgress + 1})">+1</button>
-                        <div class="progress-text">/ ${maxProgress}</div>
-                    </div>
-                    <div class="quick-progress">
-                        <button class="quick-progress-btn" onclick="updateProgress('${type}', '${id}', ${currentProgress - 5})">-5</button>
-                        <button class="quick-progress-btn" onclick="updateProgress('${type}', '${id}', ${currentProgress + 5})">+5</button>
-                        <button class="quick-progress-btn" onclick="updateProgress('${type}', '${id}', ${currentProgress - 10})">-10</button>
-                        <button class="quick-progress-btn" onclick="updateProgress('${type}', '${id}', ${currentProgress + 10})">+10</button>
-                    </div>
-                    <div class="edit-actions">
-                        <button class="btn btn-save" onclick="applyProgress('${type}', '${id}')">💾 ${getText('save')}</button>
-                        <button class="btn btn-cancel" onclick="cancelProgress('${type}', '${id}')">❌ ${getText('cancel')}</button>
-                    </div>
-                </div>
-            `;
-            
-            const card = document.querySelector(`.item-card[data-id="${id}"]`);
-            card.outerHTML = modalHTML;
-        }
-
-        function applyProgress(type, id) {
-            const progressInput = document.getElementById('progressInput');
-            const newProgress = parseInt(progressInput.value) || 0;
-            
-            updateProgress(type, id, newProgress);
-        }
-
-        function cancelProgress(type, id) {
-            // Просто перезагружаем контент
-            if (type === 'anime') {
-                loadAnimeContent();
-            } else {
-                loadMangaContent();
-            }
-        }
-
-        // 🔧 ИНИЦИАЛИЗАЦИЯ ПРИЛОЖЕНИЯ
-        document.addEventListener('DOMContentLoaded', function() {
-            // Инициализируем PWA
-            initializePWA();
-            
-            // Инициализируем Telegram Web App
-            initTelegramApp();
-            
-            // Загружаем настройки
-            loadSettings();
-            
-            // Инициализируем системы
-            initializeRatingSystem();
-            initializeStatusTabs();
-            
-            // Устанавливаем тему и язык
-            setTheme(currentTheme);
-            updateUI();
-            
-            // Загружаем начальный контент
-            loadAnimeContent();
-            loadMangaContent();
-            loadStats();
-            updateStatusCounts();
-            
-            // Показываем приветственное уведомление
-            setTimeout(() => {
-                showNotification(
-                    getText('welcome'), 
-                    getText('welcomeSubtitle'), 
-                    'info', 
-                    6000
-                );
-            }, 1500);
-            
-            console.log('AniManga Tracker initialized successfully');
-        });
-
-        // 🔧 ОБРАБОТЧИКИ ДЛЯ TELEGRAM BOT
-        if (window.Telegram && window.Telegram.WebApp) {
-            // Обработчик получения данных от бота
-            Telegram.WebApp.onEvent('webAppDataReceived', (event) => {
-                console.log('Data received from bot:', event);
-            });
-            
-            // Обработчик нажатия кнопки назад
-            Telegram.WebApp.onEvent('backButtonClicked', () => {
-                if (window.history.length > 1) {
-                    window.history.back();
-                } else {
-                    Telegram.WebApp.close();
+        function importData(input) {
+            const file = input.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    appData = JSON.parse(e.target.result);
+                    saveData();
+                    applySettings();
+                    renderAll();
+                    showNotify('✅ ' + getText('imported'));
+                } catch(err) {
+                    showNotify('❌ Ошибка файла');
                 }
+            };
+            reader.readAsText(file);
+        }
+
+        function clearData() {
+            if(confirm('Точно удалить ВСЕ данные? Это нельзя отменить.')) {
+                localStorage.removeItem(DB_KEY);
+                appData = { anime: [], manga: [], settings: { theme: 'dark', lang: 'ru' } };
+                saveData();
+                renderAll();
+                showNotify('🗑️ Данные очищены');
+            }
+        }
+
+        // --- PWA ФУНКЦИОНАЛ (Упрощенный) ---
+        let deferredPrompt;
+        function checkPWA() {
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPrompt = e;
+                document.getElementById('pwa-install-row').style.display = 'flex';
             });
-            
-            // Показываем кнопку назад если есть история
-            if (window.history.length > 1) {
-                Telegram.WebApp.BackButton.show();
+        }
+
+        function installPWA() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('User accepted the A2HS prompt');
+                    }
+                    deferredPrompt = null;
+                    document.getElementById('pwa-install-row').style.display = 'none';
+                });
+            } else {
+                alert('Установка не поддерживается или приложение уже установлено. Для iOS нажмите "Поделиться" -> "На экран Домой".');
             }
         }
     </script>
 </body>
-                    </html>
+</html>
