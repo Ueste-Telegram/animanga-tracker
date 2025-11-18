@@ -6,17 +6,10 @@
     <title>AniManga Tracker</title>
     
     <meta name="theme-color" content="#1a1a2e">
-    <meta name="description" content="Track your anime and manga progress">
-    
     <link rel="manifest" href="manifest.json">
     <script>
-        // Регистрация Service Worker для работы оффлайн и установки
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js')
-                    .then(reg => console.log('Service Worker registered'))
-                    .catch(err => console.error('Service Worker error:', err));
-            });
+            window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => null));
         }
     </script>
     
@@ -24,245 +17,83 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <style>
-        /* 🔧 БАЗОВЫЕ СТИЛИ */
+        /* 🎨 СТИЛИ */
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-
         :root {
-            /* Темная тема по умолчанию */
-            --bg-color: #0f0f23;
-            --card-color: #1a1a2e;
-            --text-color: #ffffff;
-            --border-color: #2d3748;
-            --accent-color: #667eea;
-            --secondary-color: #764ba2;
-            --shadow-color: rgba(0, 0, 0, 0.3);
+            --bg-color: #0f0f23; --card-color: #1a1a2e; --text-color: #ffffff;
+            --border-color: #2d3748; --accent-color: #667eea; --secondary-color: #764ba2;
         }
-
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: var(--bg-color);
-            color: var(--text-color);
-            min-height: 100vh;
-            padding: 15px;
-            transition: background 0.3s ease, color 0.3s ease;
-            line-height: 1.5;
-            overflow-x: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+            background: var(--bg-color); color: var(--text-color);
+            padding: 15px; min-height: 100vh; padding-bottom: 80px;
         }
-
-        /* Светлая тема */
         body.light-theme {
-            --bg-color: #ffffff;
-            --card-color: #f8f9fa;
-            --text-color: #2d3748;
-            --border-color: #e2e8f0;
-            --accent-color: #667eea;
-            --secondary-color: #764ba2;
-            --shadow-color: rgba(0, 0, 0, 0.1);
+            --bg-color: #f0f2f5; --card-color: #ffffff; --text-color: #1a1a2e;
+            --border-color: #ddd; --accent-color: #5856d6;
         }
 
-        /* Контейнер */
-        .container { max-width: 600px; margin: 0 auto; padding-bottom: 80px; }
+        /* Интерфейс */
+        .container { max-width: 600px; margin: 0 auto; }
+        .header { text-align: center; margin-bottom: 20px; padding: 15px; background: var(--card-color); border-radius: 16px; border: 1px solid var(--border-color); }
+        .header h1 { font-size: 20px; background: linear-gradient(45deg, var(--accent-color), var(--secondary-color)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
-        /* Заголовок */
-        .header {
-            text-align: center;
-            margin-bottom: 20px;
-            padding: 20px;
-            background: var(--card-color);
-            border-radius: 16px;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 4px 15px var(--shadow-color);
-        }
+        /* Табы */
+        .tabs { display: flex; background: var(--card-color); padding: 4px; border-radius: 12px; margin-bottom: 15px; border: 1px solid var(--border-color); overflow-x: auto; }
+        .tab { flex: 1; padding: 8px; background: none; border: none; color: var(--text-color); opacity: 0.6; font-weight: 600; border-radius: 8px; white-space: nowrap; transition: 0.2s; }
+        .tab.active { background: var(--accent-color); color: white; opacity: 1; }
 
-        .header h1 {
-            font-size: 22px;
-            font-weight: 800;
-            background: linear-gradient(135deg, var(--accent-color), var(--secondary-color));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 5px;
-        }
-
-        /* Вкладки (Tabs) */
-        .tabs {
-            display: flex;
-            background: var(--card-color);
-            padding: 5px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            border: 1px solid var(--border-color);
-            overflow-x: auto;
-        }
-        .tab {
-            flex: 1;
-            padding: 10px;
-            text-align: center;
-            background: transparent;
-            border: none;
-            color: var(--text-color);
-            font-weight: 600;
-            font-size: 13px;
-            border-radius: 8px;
-            opacity: 0.7;
-            transition: 0.3s;
-            white-space: nowrap;
-        }
-        .tab.active {
-            background: linear-gradient(135deg, var(--accent-color), var(--secondary-color));
-            color: white;
-            opacity: 1;
-            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
-        }
-
-        /* Контент */
-        .section { display: none; animation: fadeIn 0.3s ease; }
+        /* Секции */
+        .section { display: none; animation: fade 0.3s; }
         .section.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fade { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Формы */
-        .form-group { margin-bottom: 15px; }
-        .form-control {
-            width: 100%;
-            padding: 12px;
-            background: var(--card-color);
-            border: 2px solid var(--border-color);
-            border-radius: 10px;
-            color: var(--text-color);
-            font-size: 16px;
-            transition: 0.3s;
-        }
-        .form-control:focus { outline: none; border-color: var(--accent-color); }
-
-        .btn {
-            width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, var(--accent-color), var(--secondary-color));
-            color: white;
-            border: none;
-            border-radius: 12px;
-            font-weight: 700;
-            font-size: 16px;
-            margin-top: 10px;
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-        }
-        .btn-secondary { background: var(--border-color); color: var(--text-color); box-shadow: none; }
-        .btn-danger { background: #ff4757; margin-top: 20px; }
-
-        /* Карточки */
-        .item-card {
-            background: var(--card-color);
-            padding: 15px;
-            border-radius: 12px;
-            border: 1px solid var(--border-color);
-            margin-bottom: 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        .item-main { display: flex; gap: 12px; }
+        /* Карточки элементов */
+        .item-card { background: var(--card-color); padding: 12px; border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 10px; position: relative; }
+        .item-header { display: flex; gap: 12px; }
+        .cover-img { width: 70px; height: 100px; object-fit: cover; border-radius: 6px; background: #333; flex-shrink: 0; }
         .item-info { flex: 1; min-width: 0; }
-        .item-title { font-weight: 700; font-size: 16px; margin-bottom: 5px; line-height: 1.3; }
-        .item-meta { font-size: 13px; opacity: 0.7; margin-bottom: 5px; }
+        .item-title { font-weight: bold; margin-bottom: 4px; font-size: 16px; }
+        .item-meta { font-size: 13px; opacity: 0.7; margin-bottom: 6px; }
         
-        /* Рейтинг */
-        .rating { color: #FFD700; font-size: 18px; letter-spacing: 2px; }
-        .rating-input span { cursor: pointer; color: var(--border-color); font-size: 24px; transition: 0.2s; }
-        .rating-input span.active { color: #FFD700; }
-
         /* Прогресс бар */
-        .progress-container { height: 6px; background: var(--border-color); border-radius: 3px; overflow: hidden; margin-top: 8px; }
+        .progress-bg { height: 6px; background: var(--border-color); border-radius: 3px; overflow: hidden; margin: 8px 0; }
         .progress-fill { height: 100%; background: var(--accent-color); transition: width 0.3s; }
 
-        /* Кнопки действий */
-        .quick-progress { display: flex; gap: 5px; margin-top: 8px; overflow-x: auto; padding-bottom: 5px; }
-        .qp-btn {
-            padding: 6px 12px;
-            background: var(--card-color);
-            border: 1px solid var(--border-color);
-            border-radius: 20px;
-            color: var(--text-color);
-            font-size: 12px;
-            font-weight: 600;
-            white-space: nowrap;
-        }
+        /* Кнопки */
+        .btn { width: 100%; padding: 12px; background: var(--accent-color); color: white; border: none; border-radius: 10px; font-weight: 600; margin-top: 8px; }
+        .btn-outline { background: transparent; border: 1px solid var(--border-color); color: var(--text-color); }
+        .btn-danger { background: #ff4757; color: white; }
+        
+        /* Быстрые действия */
+        .actions { display: flex; gap: 6px; margin-top: 8px; overflow-x: auto; }
+        .act-btn { padding: 5px 10px; background: var(--card-color); border: 1px solid var(--border-color); border-radius: 20px; color: var(--text-color); font-size: 12px; white-space: nowrap; }
+        
+        /* Формы */
+        .form-control { width: 100%; padding: 10px; background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-color); margin-bottom: 8px; }
+        
+        /* Фильтры */
+        .filters { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 10px; padding-bottom: 5px; }
+        .filter-chip { padding: 6px 12px; background: var(--card-color); border: 1px solid var(--border-color); border-radius: 20px; font-size: 12px; white-space: nowrap; }
+        .filter-chip.active { background: var(--accent-color); color: white; border-color: var(--accent-color); }
 
-        /* Статусы */
-        .status-scroll {
-            display: flex;
-            gap: 8px;
-            overflow-x: auto;
-            padding-bottom: 10px;
-            margin-bottom: 15px;
-        }
-        .status-chip {
-            padding: 8px 16px;
-            background: var(--card-color);
-            border: 1px solid var(--border-color);
-            border-radius: 20px;
-            color: var(--text-color);
-            font-size: 13px;
-            white-space: nowrap;
-            transition: 0.3s;
-        }
-        .status-chip.active {
-            background: var(--accent-color);
-            color: white;
-            border-color: var(--accent-color);
-        }
+        /* МОДАЛЬНОЕ ОКНО (Редактирование) */
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 1000; display: none; align-items: center; justify-content: center; padding: 20px; }
+        .modal { background: var(--card-color); padding: 20px; border-radius: 16px; width: 100%; max-width: 400px; border: 1px solid var(--border-color); }
+        .modal h3 { margin-bottom: 15px; text-align: center; }
 
         /* Уведомления */
-        .notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            left: 20px;
-            padding: 15px;
-            background: var(--card-color);
-            border-left: 4px solid var(--accent-color);
-            border-radius: 8px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            z-index: 9999;
-            transform: translateY(-150%);
-            transition: transform 0.3s ease;
-        }
-        .notification.show { transform: translateY(0); }
-
-        /* Спиннер загрузки */
-        .loading { text-align: center; padding: 40px; opacity: 0.6; }
-        .spinner {
-            width: 30px; height: 30px;
-            border: 3px solid var(--border-color);
-            border-top: 3px solid var(--accent-color);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 10px;
-        }
-        @keyframes spin { 100% { transform: rotate(360deg); } }
-
-        /* Настройки */
-        .settings-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 0;
-            border-bottom: 1px solid var(--border-color);
-        }
-        
-        /* PWA кнопка (скрыта по умолчанию) */
-        #pwa-install-row { display: none; }
+        .notify { position: fixed; top: 10px; left: 50%; transform: translateX(-50%) translateY(-100px); background: var(--card-color); padding: 12px 20px; border-radius: 30px; border: 1px solid var(--accent-color); box-shadow: 0 5px 20px rgba(0,0,0,0.3); transition: 0.3s; z-index: 2000; display: flex; gap: 10px; align-items: center; }
+        .notify.show { transform: translateX(-50%) translateY(0); }
     </style>
 </head>
 <body>
 
-    <div id="notification" class="notification">
-        <div style="font-weight:bold; margin-bottom:4px;" id="notif-title">Info</div>
-        <div id="notif-msg">Message</div>
-    </div>
+    <div id="notify" class="notify">✅ <span>Готово</span></div>
 
     <div class="container">
         <div class="header">
             <h1>🎌 AniManga Tracker</h1>
-            <p style="opacity: 0.7; font-size: 14px;">Твой личный список</p>
         </div>
 
         <div class="tabs">
@@ -273,199 +104,255 @@
         </div>
 
         <div id="anime" class="section active">
-            <div class="item-card" style="border-style: dashed; text-align: center;">
-                <h3 style="margin-bottom: 10px;">Добавить Аниме</h3>
-                <input type="text" id="animeInput" class="form-control" placeholder="Название (Наруто)" style="margin-bottom: 10px;">
-                <input type="number" id="animeTotalEp" class="form-control" placeholder="Всего серий (12)" style="margin-bottom: 10px;">
-                <select id="animeStatusSelect" class="form-control" style="margin-bottom: 10px;">
-                    <option value="watching">👀 Смотрю</option>
-                    <option value="planned">📅 В планах</option>
-                    <option value="completed">✅ Просмотрено</option>
-                    <option value="dropped">❌ Брошено</option>
-                </select>
-                <button class="btn" onclick="addItem('anime')">➕ Добавить</button>
+            <div class="item-card" style="border-style: dashed;">
+                <input type="text" id="animeTitle" class="form-control" placeholder="Название (Наруто)">
+                <input type="text" id="animeCover" class="form-control" placeholder="Ссылка на картинку (необязательно)">
+                <div style="display: flex; gap: 8px;">
+                    <input type="number" id="animeTotal" class="form-control" placeholder="Всего серий (12)">
+                    <select id="animeStatus" class="form-control">
+                        <option value="watching">👀 Смотрю</option>
+                        <option value="planned">📅 Планы</option>
+                        <option value="completed">✅ Готово</option>
+                        <option value="dropped">❌ Брошено</option>
+                    </select>
+                </div>
+                <button class="btn" onclick="addItem('anime')">➕ Добавить Аниме</button>
             </div>
-
-            <div class="status-scroll" id="animeFilters"></div>
-            <div id="animeList"><div class="loading"><div class="spinner"></div>Загрузка...</div></div>
+            <div class="filters" id="animeFilters"></div>
+            <div id="animeList"></div>
         </div>
 
         <div id="manga" class="section">
-            <div class="item-card" style="border-style: dashed; text-align: center;">
-                <h3 style="margin-bottom: 10px;">Добавить Мангу</h3>
-                <input type="text" id="mangaInput" class="form-control" placeholder="Название (Берсерк)" style="margin-bottom: 10px;">
-                <input type="number" id="mangaTotalCh" class="form-control" placeholder="Всего глав (100)" style="margin-bottom: 10px;">
-                <select id="mangaStatusSelect" class="form-control" style="margin-bottom: 10px;">
-                    <option value="reading">📖 Читаю</option>
-                    <option value="planned">📅 В планах</option>
-                    <option value="completed">✅ Прочитано</option>
-                    <option value="dropped">❌ Брошено</option>
-                </select>
-                <button class="btn" onclick="addItem('manga')">➕ Добавить</button>
+            <div class="item-card" style="border-style: dashed;">
+                <input type="text" id="mangaTitle" class="form-control" placeholder="Название (Берсерк)">
+                <input type="text" id="mangaCover" class="form-control" placeholder="Ссылка на картинку (необязательно)">
+                <div style="display: flex; gap: 8px;">
+                    <input type="number" id="mangaTotal" class="form-control" placeholder="Всего глав (100)">
+                    <select id="mangaStatus" class="form-control">
+                        <option value="reading">📖 Читаю</option>
+                        <option value="planned">📅 Планы</option>
+                        <option value="completed">✅ Готово</option>
+                        <option value="dropped">❌ Брошено</option>
+                    </select>
+                </div>
+                <button class="btn" onclick="addItem('manga')">➕ Добавить Мангу</button>
             </div>
-
-            <div class="status-scroll" id="mangaFilters"></div>
-            <div id="mangaList"><div class="loading"><div class="spinner"></div>Загрузка...</div></div>
+            <div class="filters" id="mangaFilters"></div>
+            <div id="mangaList"></div>
         </div>
 
         <div id="stats" class="section">
             <div class="item-card">
-                <h3>📊 Общая статистика</h3>
-                <canvas id="statsChart" width="300" height="300"></canvas>
-                <div style="margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; text-align: center;">
-                    <div style="background:var(--bg-color); padding:10px; border-radius:8px;">
-                        <div style="font-size:24px; font-weight:bold; color:var(--accent-color)" id="statAnimeCount">0</div>
-                        <div style="font-size:12px">Аниме</div>
-                    </div>
-                    <div style="background:var(--bg-color); padding:10px; border-radius:8px;">
-                        <div style="font-size:24px; font-weight:bold; color:var(--secondary-color)" id="statMangaCount">0</div>
-                        <div style="font-size:12px">Манга</div>
-                    </div>
-                </div>
+                <canvas id="chart"></canvas>
             </div>
         </div>
 
         <div id="settings" class="section">
             <div class="item-card">
-                <h3>⚙️ Настройки</h3>
+                <h3>Резервное копирование</h3>
+                <p style="font-size: 12px; opacity: 0.7; margin-bottom: 10px;">Если скачивание не работает, используйте кнопку "Копировать".</p>
                 
-                <div class="settings-row">
-                    <span>🌙 Темная тема</span>
-                    <input type="checkbox" id="themeToggle" onchange="toggleTheme()" checked>
-                </div>
+                <button class="btn btn-outline" onclick="copyDataToClipboard()">📋 Скопировать данные (Надежно)</button>
+                <button class="btn btn-outline" onclick="exportFile()">📥 Скачать файл (Для ПК)</button>
                 
-                <div class="settings-row">
-                    <span>🇺🇸 English Language</span>
-                    <input type="checkbox" id="langToggle" onchange="toggleLang()">
-                </div>
+                <hr style="margin: 15px 0; border: 0; border-top: 1px solid var(--border-color);">
+                
+                <h3>Восстановление</h3>
+                <button class="btn btn-outline" onclick="document.getElementById('importFile').click()">📤 Загрузить из файла</button>
+                <input type="file" id="importFile" hidden onchange="importFile(this)">
+                
+                <hr style="margin: 15px 0; border: 0; border-top: 1px solid var(--border-color);">
+                
+                <button class="btn btn-outline" onclick="toggleTheme()">🌓 Сменить тему</button>
+                <button class="btn btn-danger" onclick="clearAll()" style="margin-top: 15px;">🗑️ Удалить всё</button>
+            </div>
+        </div>
+    </div>
 
-                <div class="settings-row" id="pwa-install-row">
-                    <span>📱 Приложение</span>
-                    <button class="qp-btn" onclick="installPWA()">Скачать</button>
-                </div>
+    <div id="editModal" class="modal-overlay">
+        <div class="modal">
+            <h3>Редактирование</h3>
+            <input type="hidden" id="editId">
+            <input type="hidden" id="editType">
+            
+            <label style="font-size: 12px;">Название</label>
+            <input type="text" id="editTitle" class="form-control">
+            
+            <label style="font-size: 12px;">Обложка (URL)</label>
+            <input type="text" id="editCover" class="form-control">
+            
+            <label style="font-size: 12px;">Всего серий/глав</label>
+            <input type="number" id="editTotal" class="form-control">
+            
+            <label style="font-size: 12px;">Статус</label>
+            <select id="editStatus" class="form-control">
+                <option value="watching">Смотрю / Читаю</option>
+                <option value="planned">В планах</option>
+                <option value="completed">Просмотрено / Прочитано</option>
+                <option value="dropped">Брошено</option>
+            </select>
 
-                <div style="margin-top: 20px;">
-                    <button class="btn btn-secondary" onclick="exportData()">📥 Скачать копию данных</button>
-                    <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()" style="margin-top:10px">📤 Загрузить из файла</button>
-                    <input type="file" id="importFile" style="display:none" onchange="importData(this)">
-                    
-                    <button class="btn btn-danger" onclick="clearData()">🗑️ Удалить все данные</button>
-                    <button class="btn btn-secondary" onclick="window.location.reload()" style="margin-top: 20px; opacity: 0.5;">🔄 Перезагрузить App</button>
-                </div>
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <button class="btn btn-outline" onclick="closeEdit()">Отмена</button>
+                <button class="btn" onclick="saveEdit()">Сохранить</button>
             </div>
         </div>
     </div>
 
     <script>
         // --- ИНИЦИАЛИЗАЦИЯ ---
-        let tg = window.Telegram.WebApp;
+        const tg = window.Telegram.WebApp;
         tg.expand();
-        if (tg.ready) tg.ready();
-
-        document.documentElement.style.setProperty('--bg-color', tg.backgroundColor || '#0f0f23');
-        document.documentElement.style.setProperty('--card-color', tg.secondaryBackgroundColor || '#1a1a2e');
-        document.documentElement.style.setProperty('--text-color', tg.textColor || '#ffffff');
-
-        const DB_KEY = 'animanga_db_' + (tg.initDataUnsafe?.user?.id || 'local_user');
-        let appData = { anime: [], manga: [], settings: { theme: 'dark', lang: 'ru' } };
-        let currentFilter = { anime: 'all', manga: 'all' };
-
-        const i18n = {
-            ru: {
-                anime: 'Аниме', manga: 'Манга', stats: 'Инфо', settings: 'Настройки',
-                add: 'Добавить', watch: 'Смотрю', plan: 'В планах', done: 'Готово', drop: 'Брошено',
-                ep: 'эп.', ch: 'гл.', empty: 'Список пуст', deleteConfirm: 'Удалить?',
-                saved: 'Сохранено!', imported: 'Данные загружены'
-            },
-            en: {
-                anime: 'Anime', manga: 'Manga', stats: 'Stats', settings: 'Settings',
-                add: 'Add', watch: 'Watching', plan: 'Planned', done: 'Completed', drop: 'Dropped',
-                ep: 'ep.', ch: 'ch.', empty: 'List is empty', deleteConfirm: 'Delete?',
-                saved: 'Saved!', imported: 'Data imported'
-            }
-        };
-
-        // --- ЗАПУСК ---
-        document.addEventListener('DOMContentLoaded', () => {
-            loadData();
-            renderAll();
-            checkPWA();
-        });
-
-        // --- ФУНКЦИИ ---
-        function loadData() {
-            const raw = localStorage.getItem(DB_KEY);
-            if (raw) {
-                try {
-                    appData = JSON.parse(raw);
-                    if (!appData.anime) appData.anime = [];
-                    if (!appData.manga) appData.manga = [];
-                    if (!appData.settings) appData.settings = { theme: 'dark', lang: 'ru' };
-                } catch (e) { console.error(e); }
-            }
-            applySettings();
+        
+        // Цвета из Телеграм
+        if (tg.backgroundColor) {
+            document.documentElement.style.setProperty('--bg-color', tg.backgroundColor);
+            document.documentElement.style.setProperty('--card-color', tg.secondaryBackgroundColor);
+            document.documentElement.style.setProperty('--text-color', tg.textColor);
         }
 
-        function saveData() {
-            localStorage.setItem(DB_KEY, JSON.stringify(appData));
+        const DB_KEY = 'animanga_v3_' + (tg.initDataUnsafe?.user?.id || 'local');
+        let data = { anime: [], manga: [], settings: { theme: 'dark' } };
+        let filters = { anime: 'all', manga: 'all' };
+
+        // --- ОСНОВНЫЕ ФУНКЦИИ ---
+        
+        function init() {
+            const raw = localStorage.getItem(DB_KEY);
+            if (raw) data = JSON.parse(raw);
+            if (data.settings.theme === 'light') document.body.classList.add('light-theme');
+            renderAll();
+        }
+
+        function save() {
+            localStorage.setItem(DB_KEY, JSON.stringify(data));
             renderStats();
         }
 
         function addItem(type) {
-            const input = document.getElementById(type + 'Input');
-            const totalInput = document.getElementById(type === 'anime' ? 'animeTotalEp' : 'mangaTotalCh');
-            const statusSelect = document.getElementById(type + 'StatusSelect');
-            
-            const title = input.value.trim();
+            const title = document.getElementById(type + 'Title').value.trim();
+            const cover = document.getElementById(type + 'Cover').value.trim();
+            const total = parseInt(document.getElementById(type + 'Total').value) || 0;
+            const status = document.getElementById(type + 'Status').value;
+
             if (!title) return showNotify('❌ Введите название');
 
-            appData[type].unshift({
+            // Логика авто-заполнения при статусе "Готово"
+            let initialProgress = 0;
+            if (status === 'completed' && total > 0) initialProgress = total;
+
+            data[type].unshift({
                 id: Date.now(),
-                title: title,
-                total: parseInt(totalInput.value) || 0,
-                progress: 0,
-                status: statusSelect.value,
+                title, cover, total, status,
+                progress: initialProgress,
                 rating: 0
             });
 
-            saveData();
-            input.value = '';
-            totalInput.value = '';
+            save();
             renderList(type);
-            showNotify('✅ Добавлено: ' + title);
+            
+            // Очистка полей
+            document.getElementById(type + 'Title').value = '';
+            document.getElementById(type + 'Cover').value = '';
+            document.getElementById(type + 'Total').value = '';
+            showNotify('✅ Добавлено');
+        }
+
+        function updateProgress(type, id, amount) {
+            const item = data[type].find(i => i.id === id);
+            if (!item) return;
+
+            let newProgress = item.progress + amount;
+            
+            // Ограничение: нельзя меньше 0
+            if (newProgress < 0) newProgress = 0;
+            
+            // Ограничение: нельзя больше максимума (если максимум задан)
+            if (item.total > 0 && newProgress > item.total) {
+                newProgress = item.total;
+                showNotify('⚠️ Достигнут максимум');
+            }
+
+            item.progress = newProgress;
+
+            // Авто-смена статуса на "Просмотрено"
+            if (item.total > 0 && item.progress >= item.total && item.status !== 'completed') {
+                item.status = 'completed';
+                showNotify('🎉 Завершено!');
+            }
+
+            save();
+            renderList(type);
+        }
+
+        // --- РЕДАКТИРОВАНИЕ ---
+        
+        function openEdit(type, id) {
+            const item = data[type].find(i => i.id === id);
+            if (!item) return;
+
+            document.getElementById('editId').value = id;
+            document.getElementById('editType').value = type;
+            document.getElementById('editTitle').value = item.title;
+            document.getElementById('editCover').value = item.cover || '';
+            document.getElementById('editTotal').value = item.total || '';
+            
+            // Настройка селекта статусов
+            const select = document.getElementById('editStatus');
+            // Хак для "reading/watching" так как в select они разные
+            if (type === 'anime' && item.status === 'watching') select.value = 'watching';
+            else if (type === 'manga' && item.status === 'reading') select.value = 'watching'; // Используем watching как value в модалке
+            else select.value = item.status;
+
+            document.getElementById('editModal').style.display = 'flex';
+        }
+
+        function closeEdit() {
+            document.getElementById('editModal').style.display = 'none';
+        }
+
+        function saveEdit() {
+            const id = parseInt(document.getElementById('editId').value);
+            const type = document.getElementById('editType').value;
+            const item = data[type].find(i => i.id === id);
+
+            if (item) {
+                item.title = document.getElementById('editTitle').value;
+                item.cover = document.getElementById('editCover').value;
+                item.total = parseInt(document.getElementById('editTotal').value) || 0;
+                
+                // Корректировка статуса
+                let rawStatus = document.getElementById('editStatus').value;
+                if (type === 'manga' && rawStatus === 'watching') rawStatus = 'reading';
+                item.status = rawStatus;
+
+                // Если сменили на "Готово" - заполнить прогресс
+                if (item.status === 'completed' && item.total > 0) {
+                    item.progress = item.total;
+                }
+                
+                // Проверка переполнения после редактирования
+                if (item.total > 0 && item.progress > item.total) {
+                    item.progress = item.total;
+                }
+
+                save();
+                renderList(type);
+                closeEdit();
+                showNotify('💾 Сохранено');
+            }
         }
 
         function deleteItem(type, id) {
-            if (confirm(getText('deleteConfirm'))) {
-                appData[type] = appData[type].filter(i => i.id !== id);
-                saveData();
+            if (confirm('Удалить?')) {
+                data[type] = data[type].filter(i => i.id !== id);
+                save();
                 renderList(type);
             }
         }
 
-        function updateProgress(type, id, change) {
-            const item = appData[type].find(i => i.id === id);
-            if (item) {
-                item.progress = Math.max(0, item.progress + change);
-                if (item.total > 0 && item.progress >= item.total && item.status !== 'completed') {
-                    item.status = 'completed';
-                    showNotify('🎉 Завершено!');
-                }
-                saveData();
-                renderList(type);
-            }
-        }
+        // --- РЕНДЕРИНГ ---
 
-        function updateRating(type, id, rating) {
-            const item = appData[type].find(i => i.id === id);
-            if (item) {
-                item.rating = rating;
-                saveData();
-                renderList(type);
-            }
-        }
-
-        // --- ОТРИСОВКА ---
         function renderAll() {
             renderFilters('anime');
             renderFilters('manga');
@@ -475,181 +362,163 @@
         }
 
         function renderFilters(type) {
-            const container = document.getElementById(type + 'Filters');
             const statuses = ['all', 'watching', 'reading', 'planned', 'completed', 'dropped'];
-            const validStatuses = statuses.filter(s => {
+            const valid = statuses.filter(s => {
                 if (type === 'anime' && s === 'reading') return false;
                 if (type === 'manga' && s === 'watching') return false;
                 return true;
             });
 
-            container.innerHTML = validStatuses.map(status => {
-                const label = getStatusLabel(status);
-                const activeClass = currentFilter[type] === status ? 'active' : '';
-                let count = status === 'all' ? appData[type].length : appData[type].filter(i => i.status === status).length;
-                return `<div class="status-chip ${activeClass}" onclick="setFilter('${type}', '${status}')">${label} (${count})</div>`;
+            const container = document.getElementById(type + 'Filters');
+            container.innerHTML = valid.map(s => {
+                const active = filters[type] === s ? 'active' : '';
+                const label = getStatusLabel(s);
+                return `<button class="filter-chip ${active}" onclick="setFilter('${type}', '${s}')">${label}</button>`;
             }).join('');
         }
 
-        function setFilter(type, status) {
-            currentFilter[type] = status;
+        function setFilter(type, s) {
+            filters[type] = s;
             renderFilters(type);
             renderList(type);
         }
 
         function renderList(type) {
-            const listEl = document.getElementById(type + 'List');
-            const items = appData[type].filter(item => currentFilter[type] === 'all' || item.status === currentFilter[type]);
+            const container = document.getElementById(type + 'List');
+            const list = data[type].filter(i => filters[type] === 'all' || i.status === filters[type]);
 
-            if (items.length === 0) {
-                listEl.innerHTML = `<div style="text-align:center; opacity:0.5; padding:20px;">${getText('empty')}</div>`;
+            if (list.length === 0) {
+                container.innerHTML = '<div style="text-align:center; opacity:0.5; padding:20px;">Пусто</div>';
                 return;
             }
 
-            listEl.innerHTML = items.map(item => {
+            container.innerHTML = list.map(item => {
                 const percent = item.total > 0 ? Math.min((item.progress / item.total) * 100, 100) : 0;
                 const statusLabel = getStatusLabel(item.status);
-                const unit = type === 'anime' ? getText('ep') : getText('ch');
-                let starsHtml = '';
-                for(let i=1; i<=5; i++) starsHtml += `<span class="${i <= item.rating ? 'active' : ''}" onclick="updateRating('${type}', ${item.id}, ${i})">★</span>`;
+                const coverHtml = item.cover ? `<img src="${item.cover}" class="cover-img" onerror="this.style.display='none'">` : '';
 
                 return `
                 <div class="item-card">
-                    <div class="item-main">
+                    <div class="item-header">
+                        ${coverHtml}
                         <div class="item-info">
                             <div class="item-title">${item.title}</div>
-                            <div class="item-meta">${statusLabel} • ${item.progress} / ${item.total || '?'} ${unit}</div>
-                            <div class="progress-container"><div class="progress-fill" style="width: ${percent}%"></div></div>
+                            <div class="item-meta">${statusLabel} • ${item.progress} / ${item.total || '?'}</div>
+                            <div class="progress-bg">
+                                <div class="progress-fill" style="width: ${percent}%"></div>
+                            </div>
+                            <div class="actions">
+                                <button class="act-btn" onclick="updateProgress('${type}', ${item.id}, 1)">+1</button>
+                                <button class="act-btn" onclick="updateProgress('${type}', ${item.id}, 5)">+5</button>
+                                <button class="act-btn" onclick="openEdit('${type}', ${item.id})">✏️ Ред.</button>
+                                <button class="act-btn" style="color:#ff4757; border-color:#ff4757" onclick="deleteItem('${type}', ${item.id})">🗑️</button>
+                            </div>
                         </div>
-                        <div class="rating rating-input">${starsHtml}</div>
-                    </div>
-                    <div class="quick-progress">
-                        <button class="qp-btn" onclick="updateProgress('${type}', ${item.id}, 1)">+1</button>
-                        <button class="qp-btn" onclick="updateProgress('${type}', ${item.id}, 5)">+5</button>
-                        <button class="qp-btn" onclick="updateProgress('${type}', ${item.id}, -1)">-1</button>
-                        <button class="qp-btn" style="border-color:#ff4757; color:#ff4757" onclick="deleteItem('${type}', ${item.id})">🗑️</button>
                     </div>
                 </div>`;
             }).join('');
         }
 
         function renderStats() {
-            document.getElementById('statAnimeCount').innerText = appData.anime.length;
-            document.getElementById('statMangaCount').innerText = appData.manga.length;
-            const ctx = document.getElementById('statsChart').getContext('2d');
-            const s = { watch: 0, plan: 0, done: 0, drop: 0 };
-            [...appData.anime, ...appData.manga].forEach(i => {
-                if (i.status === 'watching' || i.status === 'reading') s.watch++;
-                else if (i.status === 'planned') s.plan++;
-                else if (i.status === 'completed') s.done++;
-                else if (i.status === 'dropped') s.drop++;
+            const ctx = document.getElementById('chart').getContext('2d');
+            let s = { w: 0, p: 0, c: 0, d: 0 };
+            
+            [...data.anime, ...data.manga].forEach(i => {
+                if (i.status.includes('watching') || i.status.includes('reading')) s.w++;
+                else if (i.status === 'planned') s.p++;
+                else if (i.status === 'completed') s.c++;
+                else if (i.status === 'dropped') s.d++;
             });
 
             if (window.myChart) window.myChart.destroy();
             window.myChart = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
-                    labels: [getText('watch'), getText('plan'), getText('done'), getText('drop')],
+                    labels: ['Смотрю', 'Планы', 'Готово', 'Брошено'],
                     datasets: [{
-                        data: [s.watch, s.plan, s.done, s.drop],
-                        backgroundColor: ['#667eea', '#f6e58d', '#6ab04c', '#ff4757'],
+                        data: [s.w, s.p, s.c, s.d],
+                        backgroundColor: ['#667eea', '#f6e58d', '#4caf50', '#ff4757'],
                         borderWidth: 0
                     }]
                 },
-                options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { color: getComputedStyle(document.body).getPropertyValue('--text-color') } } } }
+                options: { responsive: true, plugins: { legend: { position: 'right', labels: { color: '#888', boxWidth: 12 } } } }
             });
         }
 
-        // --- HELPERS ---
-        function switchTab(tabId) {
-            document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
-            document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
-            const idx = ['anime', 'manga', 'stats', 'settings'].indexOf(tabId);
-            if(idx !== -1) document.querySelectorAll('.tab')[idx].classList.add('active');
+        // --- УТИЛИТЫ ---
+
+        function getStatusLabel(s) {
+            const map = { 'all': 'Все', 'watching': 'Смотрю', 'reading': 'Читаю', 'planned': 'Планы', 'completed': 'Готово', 'dropped': 'Брошено' };
+            return map[s] || s;
+        }
+
+        function switchTab(id) {
+            document.querySelectorAll('.section').forEach(e => e.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            document.querySelectorAll('.tab').forEach(e => e.classList.remove('active'));
+            event.target.classList.add('active');
         }
 
         function showNotify(msg) {
-            const n = document.getElementById('notification');
-            document.getElementById('notif-msg').innerText = msg;
+            const n = document.getElementById('notify');
+            n.innerHTML = msg;
             n.classList.add('show');
-            setTimeout(() => n.classList.remove('show'), 3000);
+            setTimeout(() => n.classList.remove('show'), 2000);
         }
 
-        function getText(key) { return i18n[appData.settings.lang][key] || key; }
-        function getStatusLabel(status) {
-            const map = { 'all': 'Все', 'watching': getText('watch'), 'reading': getText('watch'), 'planned': getText('plan'), 'completed': getText('done'), 'dropped': getText('drop') };
-            return map[status] || status;
+        function toggleTheme() {
+            document.body.classList.toggle('light-theme');
+            data.settings.theme = document.body.classList.contains('light-theme') ? 'light' : 'dark';
+            save();
         }
 
-        function applySettings() {
-            const s = appData.settings;
-            document.body.className = s.theme === 'light' ? 'light-theme' : '';
-            document.getElementById('themeToggle').checked = s.theme === 'dark';
-            document.getElementById('langToggle').checked = s.lang === 'en';
-            const tabs = document.querySelectorAll('.tab');
-            tabs[0].innerText = '🎬 ' + getText('anime');
-            tabs[1].innerText = '📚 ' + getText('manga');
-            tabs[2].innerText = '📊 ' + getText('stats');
-            tabs[3].innerText = '⚙️ ' + getText('settings');
-            renderFilters('anime'); renderFilters('manga'); renderStats();
+        function clearAll() {
+            if (confirm('Удалить ВСЕ данные безвозвратно?')) {
+                localStorage.removeItem(DB_KEY);
+                location.reload();
+            }
         }
 
-        function toggleTheme() { appData.settings.theme = document.getElementById('themeToggle').checked ? 'dark' : 'light'; saveData(); applySettings(); }
-        function toggleLang() { appData.settings.lang = document.getElementById('langToggle').checked ? 'en' : 'ru'; saveData(); applySettings(); }
+        // --- РЕЗЕРВНОЕ КОПИРОВАНИЕ ---
 
-        function exportData() {
-            const blob = new Blob([JSON.stringify(appData)], {type: "application/json"});
+        function copyDataToClipboard() {
+            const json = JSON.stringify(data);
+            navigator.clipboard.writeText(json).then(() => {
+                showNotify('📋 Скопировано в буфер!');
+            }).catch(() => {
+                alert('Не удалось скопировать. Выделите текст ниже:\n\n' + json);
+            });
+        }
+
+        function exportFile() {
+            const blob = new Blob([JSON.stringify(data)], {type: 'application/json'});
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
-            a.download = "animanga_backup.json";
-            document.body.appendChild(a); a.click();
-            showNotify('📥 Файл скачивается...');
+            a.download = 'animanga_backup.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
         }
 
-        function importData(input) {
+        function importFile(input) {
             const file = input.files[0];
             if (!file) return;
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = (e) => {
                 try {
-                    appData = JSON.parse(e.target.result);
-                    saveData(); applySettings(); renderAll();
-                    showNotify('✅ ' + getText('imported'));
-                } catch(err) { showNotify('❌ Ошибка файла'); }
+                    data = JSON.parse(e.target.result);
+                    save();
+                    renderAll();
+                    showNotify('✅ Данные загружены');
+                } catch (err) {
+                    alert('Ошибка файла');
+                }
             };
             reader.readAsText(file);
         }
 
-        function clearData() {
-            if(confirm('Точно удалить ВСЕ данные?')) {
-                localStorage.removeItem(DB_KEY);
-                appData = { anime: [], manga: [], settings: { theme: 'dark', lang: 'ru' } };
-                saveData(); renderAll(); showNotify('🗑️ Данные очищены');
-            }
-        }
-
-        // --- PWA Logic ---
-        let deferredPrompt;
-        function checkPWA() {
-            window.addEventListener('beforeinstallprompt', (e) => {
-                e.preventDefault();
-                deferredPrompt = e;
-                document.getElementById('pwa-install-row').style.display = 'flex';
-            });
-        }
-
-        function installPWA() {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                deferredPrompt.userChoice.then((choiceResult) => {
-                    deferredPrompt = null;
-                    document.getElementById('pwa-install-row').style.display = 'none';
-                });
-            } else {
-                alert('Чтобы установить на iPhone: нажмите "Поделиться" -> "На экран Домой".');
-            }
-        }
+        // Запуск
+        init();
     </script>
 </body>
 </html>
