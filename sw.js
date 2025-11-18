@@ -1,62 +1,25 @@
-const CACHE_NAME = 'animanga-tracker-v1.2';
-const urlsToCache = [
-  '/animanga-tracker/',
-  '/animanga-tracker/index.html'
+const CACHE_NAME = 'animanga-v1';
+const ASSETS = [
+  './',
+  './index.html',
+  'https://cdn.jsdelivr.net/npm/chart.js',
+  'https://telegram.org/js/telegram-web-app.js'
 ];
 
-// Установка Service Worker
-self.addEventListener('install', function(event) {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(function(cache) {
-        console.log('Opened cache');
-        return cache.addAll(urlsToCache);
-      })
-  );
-});
-
-// Активация Service Worker
-self.addEventListener('activate', function(event) {
-  event.waitUntil(
-    caches.keys().then(function(cacheNames) {
-      return Promise.all(
-        cacheNames.map(function(cacheName) {
-          if (cacheName !== CACHE_NAME) {
-            console.log('Deleting old cache:', cacheName);
-            return caches.delete(cacheName);
-          }
-        })
-      );
+// Установка
+self.addEventListener('install', (e) => {
+  e.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(ASSETS);
     })
   );
 });
 
-// Перехват запросов
-self.addEventListener('fetch', function(event) {
-  event.respondWith(
-    caches.match(event.request)
-      .then(function(response) {
-        // Возвращаем кэшированную версию или делаем запрос
-        if (response) {
-          return response;
-        }
-        
-        return fetch(event.request).then(function(response) {
-          // Проверяем валидность ответа
-          if(!response || response.status !== 200 || response.type !== 'basic') {
-            return response;
-          }
-
-          // Клонируем ответ
-          var responseToCache = response.clone();
-
-          caches.open(CACHE_NAME)
-            .then(function(cache) {
-              cache.put(event.request, responseToCache);
-            });
-
-          return response;
-        });
-      })
-    );
+// Работа оффлайн
+self.addEventListener('fetch', (e) => {
+  e.respondWith(
+    caches.match(e.request).then((response) => {
+      return response || fetch(e.request);
+    })
+  );
 });
