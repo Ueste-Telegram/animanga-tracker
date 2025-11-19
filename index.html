@@ -1001,7 +1001,7 @@
                 
                 <div class="form-group">
                     <label for="animeStatus" id="labelAnimeStatus">Статус</label>
-                    <select id="animeStatus" class="form-control">
+                    <select id="animeStatus" class="form-control" onchange="handleStatusChange('anime')">
                         <option value="watching">👀 Смотрю</option>
                         <option value="planned">📅 В планах</option>
                         <option value="completed">✅ Просмотрено</option>
@@ -1095,7 +1095,7 @@
                 
                 <div class="form-group">
                     <label for="mangaStatus" id="labelMangaStatus">Статус</label>
-                    <select id="mangaStatus" class="form-control">
+                    <select id="mangaStatus" class="form-control" onchange="handleStatusChange('manga')">
                         <option value="reading">👀 Читаю</option>
                         <option value="planned">📅 В планах</option>
                         <option value="completed">✅ Прочитано</option>
@@ -1262,7 +1262,25 @@
     <script>
         // 🔧 ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ И КОНСТАНТЫ
         const STORAGE_KEY = 'animanga_tracker_data';
-        const APP_VERSION = '3.0.0'; // Новая версия с исправлениями
+        const APP_VERSION = '4.0.0'; // Новая версия с исправлениями
+        
+        // 🔄 ПРИНУДИТЕЛЬНОЕ ОБНОВЛЕНИЕ КЭША TELEGRAM
+        (function() {
+            // Добавляем параметр версии к URL
+            const currentUrl = window.location.href;
+            if (!currentUrl.includes('v=')) {
+                const newUrl = currentUrl + (currentUrl.includes('?') ? '&' : '?') + 'v=' + APP_VERSION + '-' + Date.now();
+                window.history.replaceState(null, null, newUrl);
+            }
+            
+            // Очищаем кэш localStorage при обновлении версии
+            const storedVersion = localStorage.getItem('app_version');
+            if (storedVersion !== APP_VERSION) {
+                localStorage.setItem('app_version', APP_VERSION);
+                console.log('App updated to version:', APP_VERSION);
+            }
+        })();
+
         let tg = null;
         let currentAnimeRating = 0;
         let currentMangaRating = 0;
@@ -1278,21 +1296,6 @@
         let deferredPrompt = null;
         let isPWAInstalled = false;
         let isTelegramWebApp = false;
-
-        // 🔧 ВЕРСИЯ ПРИЛОЖЕНИЯ И КЭШ
-        function checkAppVersion() {
-            const savedVersion = localStorage.getItem('animanga_tracker_version');
-            if (savedVersion !== APP_VERSION) {
-                localStorage.setItem('animanga_tracker_version', APP_VERSION);
-                console.log('App updated to version:', APP_VERSION);
-                
-                if (savedVersion && savedVersion !== APP_VERSION) {
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1000);
-                }
-            }
-        }
 
         // 🔧 PWA ФУНКЦИОНАЛЬНОСТЬ
         function initializePWA() {
@@ -1317,7 +1320,7 @@
                 isPWAInstalled = true;
                 deferredPrompt = null;
                 console.log('PWA was installed');
-                showNotification(getText('pwaInstalledTitle'), getText('pwaInstalledMessage'), 'success');
+                showNotification('✅ Установлено', 'Приложение успешно установлено!', 'success');
                 document.getElementById('pwaInstallPrompt').classList.remove('show');
                 document.getElementById('btnPwaInstall').style.display = 'none';
             });
@@ -1345,9 +1348,9 @@
                     deferredPrompt = null;
                 });
             } else if (isPWAInstalled) {
-                showNotification(getText('pwaAlreadyInstalledTitle'), getText('pwaAlreadyInstalledMessage'), 'info');
+                showNotification('ℹ️ Уже установлено', 'Приложение уже установлено на ваше устройство', 'info');
             } else {
-                showNotification(getText('pwaNotSupportedTitle'), getText('pwaNotSupportedMessage'), 'warning');
+                showNotification('⚠️ Недоступно', 'Ваш браузер не поддерживает установку приложений', 'warning');
             }
         }
 
@@ -1459,9 +1462,11 @@
                 distributionByStatus: "Распределение по статусам",
                 save: "Сохранить",
                 cancel: "Отмена",
-                markAsCompleted: "Отметить как завершенное",
+                markAsCompleted: "Завершить всё",
                 markAllEpisodes: "Отметить все эпизоды просмотренными",
-                markAllChapters: "Отметить все главы прочитанными"
+                markAllChapters: "Отметить все главы прочитанными",
+                autoProgress: "Прогресс установлен на максимум для завершенного статуса",
+                maxProgressReached: "Достигнут максимум эпизодов/глав"
             },
             en: {
                 welcome: "Welcome to AniManga Tracker!",
@@ -1561,9 +1566,11 @@
                 distributionByStatus: "Distribution by status",
                 save: "Save",
                 cancel: "Cancel",
-                markAsCompleted: "Mark as completed",
+                markAsCompleted: "Complete All",
                 markAllEpisodes: "Mark all episodes as watched",
-                markAllChapters: "Mark all chapters as read"
+                markAllChapters: "Mark all chapters as read",
+                autoProgress: "Progress set to maximum for completed status",
+                maxProgressReached: "Maximum episodes/chapters reached"
             }
         };
 
@@ -1877,6 +1884,19 @@
         }
 
         // 🔧 ФУНКЦИИ ДЛЯ АНИМЕ
+        function handleStatusChange(type) {
+            const status = document.getElementById(type + 'Status').value;
+            const totalInput = document.getElementById(type === 'anime' ? 'animeEpisodes' : 'mangaChapters');
+            const progressInput = document.getElementById(type === 'anime' ? 'animeProgress' : 'mangaProgress');
+            
+            // Если статус "completed", устанавливаем прогресс равным общему количеству
+            if (status === 'completed') {
+                const total = parseInt(totalInput.value) || 0;
+                progressInput.value = total;
+                showNotification('ℹ️ ' + getText('autoProgress'), getText('maxProgressReached'), 'info');
+            }
+        }
+
         function addAnime() {
             const title = document.getElementById('animeTitle').value.trim();
             const cover = document.getElementById('animeCover').value.trim();
@@ -1890,10 +1910,13 @@
                 return;
             }
             
-            // 🔧 ИСПРАВЛЕНИЕ P1: Если статус "completed", прогресс = общее количество
+            // 🔧 ИСПРАВЛЕНИЕ: Если статус "completed", прогресс = общее количество
             if (status === 'completed') {
                 progress = episodes;
             }
+            
+            // 🔧 ИСПРАВЛЕНИЕ: Прогресс не может быть больше общего количества
+            progress = Math.min(progress, episodes);
             
             const data = loadData();
             const newAnime = {
@@ -2016,10 +2039,13 @@
                 return;
             }
             
-            // 🔧 ИСПРАВЛЕНИЕ P1: Если статус "completed", прогресс = общее количество
+            // 🔧 ИСПРАВЛЕНИЕ: Если статус "completed", прогресс = общее количество
             if (status === 'completed') {
                 progress = chapters;
             }
+            
+            // 🔧 ИСПРАВЛЕНИЕ: Прогресс не может быть больше общего количества
+            progress = Math.min(progress, chapters);
             
             const data = loadData();
             const newManga = {
@@ -2211,7 +2237,7 @@
                 const total = type === 'anime' ? item.episodes : item.chapters;
                 const oldProgress = item.progress;
                 
-                // 🔧 ИСПРАВЛЕНИЕ P2: Нельзя превышать общее количество
+                // 🔧 ИСПРАВЛЕНИЕ: Нельзя превышать общее количество
                 item.progress = Math.min(newProgress, total);
                 item.lastUpdated = new Date().toISOString();
                 
@@ -2269,7 +2295,7 @@
                         </div>
                         <div class="form-group">
                             <label>${getText('status')}</label>
-                            <select id="edit${type.charAt(0).toUpperCase() + type.slice(1)}Status" class="form-control">
+                            <select id="edit${type.charAt(0).toUpperCase() + type.slice(1)}Status" class="form-control" onchange="handleEditStatusChange('${type}')">
                                 <option value="${type === 'anime' ? 'watching' : 'reading'}" ${item.status === (type === 'anime' ? 'watching' : 'reading') ? 'selected' : ''}>${getText(type === 'anime' ? 'watching' : 'reading')}</option>
                                 <option value="planned" ${item.status === 'planned' ? 'selected' : ''}>${getText('planned')}</option>
                                 <option value="completed" ${item.status === 'completed' ? 'selected' : ''}>${getText('completed')}</option>
@@ -2305,6 +2331,18 @@
                 card.outerHTML = editForm;
                 
                 initializeEditRating(type, item.id, item.rating);
+            }
+        }
+
+        function handleEditStatusChange(type) {
+            const status = document.getElementById(`edit${type.charAt(0).toUpperCase() + type.slice(1)}Status`).value;
+            const totalInput = document.getElementById(`edit${type.charAt(0).toUpperCase() + type.slice(1)}Total`);
+            const progressInput = document.getElementById(`edit${type.charAt(0).toUpperCase() + type.slice(1)}Progress`);
+            
+            // Если статус "completed", устанавливаем прогресс равным общему количеству
+            if (status === 'completed') {
+                const total = parseInt(totalInput.value) || 0;
+                progressInput.value = total;
             }
         }
 
@@ -2347,17 +2385,20 @@
                 return;
             }
             
-            // 🔧 ИСПРАВЛЕНИЕ P1: Если статус "completed", прогресс = общее количество
+            // 🔧 ИСПРАВЛЕНИЕ: Если статус "completed", прогресс = общее количество
             if (status === 'completed') {
                 progress = episodes;
             }
+            
+            // 🔧 ИСПРАВЛЕНИЕ: Прогресс не может быть больше общего количества
+            progress = Math.min(progress, episodes);
             
             const data = loadData();
             const anime = data.anime.find(a => a.id === id);
             
             if (anime) {
                 anime.title = title;
-                anime.cover = cover; // 🔧 ИСПРАВЛЕНИЕ P3: Сохранение обложки
+                anime.cover = cover; // 🔧 ИСПРАВЛЕНИЕ: Сохранение обложки
                 anime.status = status;
                 anime.episodes = episodes;
                 anime.progress = progress;
@@ -2386,17 +2427,20 @@
                 return;
             }
             
-            // 🔧 ИСПРАВЛЕНИЕ P1: Если статус "completed", прогресс = общее количество
+            // 🔧 ИСПРАВЛЕНИЕ: Если статус "completed", прогресс = общее количество
             if (status === 'completed') {
                 progress = chapters;
             }
+            
+            // 🔧 ИСПРАВЛЕНИЕ: Прогресс не может быть больше общего количества
+            progress = Math.min(progress, chapters);
             
             const data = loadData();
             const manga = data.manga.find(m => m.id === id);
             
             if (manga) {
                 manga.title = title;
-                manga.cover = cover; // 🔧 ИСПРАВЛЕНИЕ P3: Сохранение обложки
+                manga.cover = cover; // 🔧 ИСПРАВЛЕНИЕ: Сохранение обложки
                 manga.status = status;
                 manga.chapters = chapters;
                 manga.progress = progress;
@@ -2797,7 +2841,6 @@
 
         // 🔧 ИНИЦИАЛИЗАЦИЯ ПРИЛОЖЕНИЯ
         document.addEventListener('DOMContentLoaded', function() {
-            checkAppVersion();
             initializePWA();
             initTelegramApp();
             loadSettings();
@@ -2819,7 +2862,7 @@
                 );
             }, 1500);
             
-            console.log('AniManga Tracker initialized successfully');
+            console.log('AniManga Tracker v' + APP_VERSION + ' initialized successfully');
         });
 
         // 🔧 ОБРАБОТЧИКИ ДЛЯ TELEGRAM BOT
