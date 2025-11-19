@@ -232,7 +232,7 @@
             if (raw) {
                 try {
                     data = JSON.parse(raw);
-                    // Миграция старых данных если нужно
+                    // Проверка на наличие массивов (для старых версий)
                     if(!data.anime) data.anime = [];
                     if(!data.manga) data.manga = [];
                 } catch(e) {
@@ -256,6 +256,7 @@
 
             const title = titleInput.value.trim();
             const cover = coverInput.value.trim();
+            // **УСИЛЕННАЯ ПРОВЕРКА ЧИСЛА**
             const total = parseInt(totalInput.value) || 0;
             const status = statusInput.value;
 
@@ -287,12 +288,16 @@
             const item = data[type].find(i => i.id === id);
             if (!item) return;
 
+            // **УСИЛЕННАЯ ПРОВЕРКА ЧИСЕЛ**
+            item.progress = parseInt(item.progress) || 0;
+            item.total = parseInt(item.total) || 0;
+
             let newProgress = item.progress + amount;
             
             // Ограничение: нельзя меньше 0
             if (newProgress < 0) newProgress = 0;
             
-            // Ограничение: нельзя больше максимума (если максимум задан)
+            // ОГРАНИЧЕНИЕ (ФИКС ОШИБКИ ПЕРЕПОЛНЕНИЯ): Нельзя больше максимума
             if (item.total > 0 && newProgress > item.total) {
                 newProgress = item.total;
                 showNotify('⚠️ Достигнут максимум');
@@ -319,13 +324,14 @@
             document.getElementById('editId').value = id;
             document.getElementById('editType').value = type;
             document.getElementById('editTitle').value = item.title;
+            // **ФИКС ОБЛОЖКИ**: Заполняем поле
             document.getElementById('editCover').value = item.cover || '';
             document.getElementById('editTotal').value = item.total || '';
             
             const select = document.getElementById('editStatus');
-            // Маппинг статусов для редактирования
+            // Установка правильного статуса в модальном окне
             if (type === 'anime' && item.status === 'watching') select.value = 'watching';
-            else if (type === 'manga' && item.status === 'reading') select.value = 'watching';
+            else if (type === 'manga' && item.status === 'reading') select.value = 'watching'; // Читаю = Смотрю для унификации в окне
             else select.value = item.status;
 
             document.getElementById('editModal').style.display = 'flex';
@@ -342,7 +348,10 @@
 
             if (item) {
                 item.title = document.getElementById('editTitle').value;
+                // **ФИКС ОБЛОЖКИ**: Сохраняем поле
                 item.cover = document.getElementById('editCover').value;
+                
+                // **УСИЛЕННАЯ ПРОВЕРКА ЧИСЛА**
                 const newTotal = parseInt(document.getElementById('editTotal').value) || 0;
                 item.total = newTotal;
                 
@@ -350,12 +359,12 @@
                 if (type === 'manga' && rawStatus === 'watching') rawStatus = 'reading';
                 item.status = rawStatus;
 
-                // ЛОГИКА: Если сменили на "Готово" -> заполнить прогресс до максимума
+                // ФИКС "ГОТОВО = ВСЕ СЕРИИ": Если сменили на "Готово" -> заполнить прогресс до максимума
                 if (item.status === 'completed' && item.total > 0) {
                     item.progress = item.total;
                 }
                 
-                // ЛОГИКА: Проверка переполнения (если уменьшили общее кол-во серий)
+                // Проверка переполнения (если уменьшили общее кол-во серий)
                 if (item.total > 0 && item.progress > item.total) {
                     item.progress = item.total;
                 }
@@ -418,10 +427,13 @@
             }
 
             container.innerHTML = list.map(item => {
-                const percent = item.total > 0 ? Math.min((item.progress / item.total) * 100, 100) : 0;
+                // **УСИЛЕННАЯ ПРОВЕРКА ЧИСЕЛ**
+                const total = parseInt(item.total) || 0;
+                const progress = parseInt(item.progress) || 0;
+                
+                const percent = total > 0 ? Math.min((progress / total) * 100, 100) : 0;
                 const statusLabel = getStatusLabel(item.status);
                 
-                // Обложка: если есть ссылка, показываем картинку, иначе серый квадрат
                 let coverHtml = `<div class="cover-wrapper" style="background:#333; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:20px;">?</div>`;
                 if (item.cover) {
                     coverHtml = `<div class="cover-wrapper"><img src="${item.cover}" class="cover-img" onerror="this.style.display='none'"></div>`;
@@ -433,7 +445,7 @@
                         ${coverHtml}
                         <div class="item-info">
                             <div class="item-title">${item.title}</div>
-                            <div class="item-meta">${statusLabel} • ${item.progress} / ${item.total || '?'}</div>
+                            <div class="item-meta">${statusLabel} • ${progress} / ${total || '?'}</div>
                             <div class="progress-bg">
                                 <div class="progress-fill" style="width: ${percent}%"></div>
                             </div>
@@ -481,7 +493,7 @@
             });
         }
 
-        // --- УТИЛИТЫ ---
+        // --- УТИЛИТЫ И НАСТРОЙКИ ---
 
         function getStatusLabel(s) {
             const map = { 'all': 'Все', 'watching': 'Смотрю', 'reading': 'Читаю', 'planned': 'Планы', 'completed': 'Готово', 'dropped': 'Брошено' };
@@ -510,7 +522,7 @@
         }
 
         function clearAll() {
-            if (confirm('⚠️ Это удалит ВЕСЬ ваш список. Вы уверены?')) {
+            if (confirm('⚠️ Это удалит ВЕСЬ ваш список безвозвратно. Вы уверены?')) {
                 localStorage.removeItem(DB_KEY);
                 data = { anime: [], manga: [], settings: { theme: 'dark' } };
                 renderAll();
