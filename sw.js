@@ -1,25 +1,42 @@
-const CACHE_NAME = 'animanga-v1';
-const ASSETS = [
-  './',
-  './index.html',
-  'https://cdn.jsdelivr.net/npm/chart.js',
-  'https://telegram.org/js/telegram-web-app.js'
+const CACHE_NAME = 'animanga-tracker-v3.0.0';
+const urlsToCache = [
+  '/animanga-tracker/',
+  '/animanga-tracker/index.html',
+  '/animanga-tracker/manifest.json'
 ];
 
-// Установка
-self.addEventListener('install', (e) => {
-  e.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS);
-    })
+self.addEventListener('install', function(event) {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(function(cache) {
+        return cache.addAll(urlsToCache);
+      })
   );
 });
 
-// Работа оффлайн
-self.addEventListener('fetch', (e) => {
-  e.respondWith(
-    caches.match(e.request).then((response) => {
-      return response || fetch(e.request);
+self.addEventListener('fetch', function(event) {
+  event.respondWith(
+    caches.match(event.request)
+      .then(function(response) {
+        if (response) {
+          return response;
+        }
+        return fetch(event.request);
+      }
+    )
+  );
+});
+
+self.addEventListener('activate', function(event) {
+  event.waitUntil(
+    caches.keys().then(function(cacheNames) {
+      return Promise.all(
+        cacheNames.map(function(cacheName) {
+          if (cacheName !== CACHE_NAME) {
+            return caches.delete(cacheName);
+          }
+        })
+      );
     })
   );
 });
