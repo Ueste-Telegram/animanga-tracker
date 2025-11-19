@@ -724,97 +724,6 @@
             flex: 1;
         }
 
-        /* 🔧 АДАПТИВНОСТЬ */
-        @media (max-width: 480px) {
-            .container {
-                padding: 10px;
-            }
-            
-            .header {
-                padding: 15px;
-            }
-            
-            .header h1 {
-                font-size: 22px;
-            }
-            
-            .tab {
-                padding: 10px 6px;
-                font-size: 12px;
-            }
-            
-            .content {
-                padding: 15px;
-            }
-            
-            .form-control {
-                padding: 12px;
-                font-size: 16px;
-            }
-            
-            .btn {
-                padding: 14px 20px;
-                font-size: 16px;
-            }
-            
-            .item-header {
-                gap: 12px;
-            }
-            
-            .item-cover, .no-cover {
-                width: 70px;
-                height: 105px;
-            }
-            
-            .action-btn {
-                padding: 8px 10px;
-                font-size: 13px;
-            }
-            
-            .stats-grid {
-                grid-template-columns: 1fr;
-                gap: 10px;
-            }
-            
-            .stat-card {
-                padding: 15px;
-            }
-            
-            .stat-number {
-                font-size: 24px;
-            }
-        }
-
-        /* 🔧 SCROLLBAR */
-        ::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: var(--border-color);
-            border-radius: 3px;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: var(--accent-color);
-            border-radius: 3px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--secondary-color);
-        }
-
-        /* 🔧 TELEGRAM WEB APP SPECIFIC */
-        .tg-background {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: var(--bg-color);
-            z-index: -1;
-        }
-
         /* 🔧 АНИМАЦИИ ЗАГРУЗКИ */
         .loading {
             text-align: center;
@@ -954,6 +863,208 @@
             background: var(--border-color);
             color: var(--text-color);
         }
+
+        /* 🔧 СТИЛИ ДЛЯ ANILIST ПОИСКА */
+        .anilist-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10002;
+            padding: 20px;
+        }
+
+        .anilist-modal-content {
+            background: var(--card-color);
+            border-radius: 16px;
+            padding: 20px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+            border: 2px solid var(--accent-color);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .anilist-search-box {
+            position: relative;
+            margin-bottom: 15px;
+        }
+
+        .anilist-search-input {
+            width: 100%;
+            padding: 14px 45px 14px 14px;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            background: var(--card-color);
+            color: var(--text-color);
+            font-size: 16px;
+        }
+
+        .anilist-search-input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        .anilist-results {
+            margin-top: 15px;
+        }
+
+        .anilist-result-item {
+            background: var(--card-color);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .anilist-result-item:hover {
+            transform: translateY(-2px);
+            border-color: var(--accent-color);
+            box-shadow: 0 4px 15px var(--shadow-color);
+        }
+
+        .anilist-cover {
+            width: 60px;
+            height: 90px;
+            border-radius: 8px;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+
+        .anilist-info {
+            flex: 1;
+        }
+
+        .anilist-title {
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 5px;
+            color: var(--text-color);
+        }
+
+        .anilist-meta {
+            font-size: 14px;
+            color: var(--text-color);
+            opacity: 0.7;
+        }
+
+        .anilist-loading {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-color);
+            opacity: 0.6;
+        }
+
+        .anilist-error {
+            text-align: center;
+            padding: 20px;
+            color: #ff4757;
+            background: rgba(255, 71, 87, 0.1);
+            border-radius: 12px;
+            margin: 10px 0;
+        }
+
+        /* 🔧 АДАПТИВНОСТЬ */
+        @media (max-width: 480px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header {
+                padding: 15px;
+            }
+            
+            .header h1 {
+                font-size: 22px;
+            }
+            
+            .tab {
+                padding: 10px 6px;
+                font-size: 12px;
+            }
+            
+            .content {
+                padding: 15px;
+            }
+            
+            .form-control {
+                padding: 12px;
+                font-size: 16px;
+            }
+            
+            .btn {
+                padding: 14px 20px;
+                font-size: 16px;
+            }
+            
+            .item-header {
+                gap: 12px;
+            }
+            
+            .item-cover, .no-cover {
+                width: 70px;
+                height: 105px;
+            }
+            
+            .action-btn {
+                padding: 8px 10px;
+                font-size: 13px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            
+            .stat-card {
+                padding: 15px;
+            }
+            
+            .stat-number {
+                font-size: 24px;
+            }
+        }
+
+        /* 🔧 SCROLLBAR */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--border-color);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--accent-color);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--secondary-color);
+        }
+
+        /* 🔧 TELEGRAM WEB APP SPECIFIC */
+        .tg-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-color);
+            z-index: -1;
+        }
     </style>
 </head>
 <body class="dark-theme">
@@ -1029,6 +1140,14 @@
                         <span class="star" data-value="5">★</span>
                     </div>
                     <div style="color: var(--text-color); opacity: 0.7; font-size: 12px; margin-top: 5px;" id="animeRatingHelp">Нажмите на звезду для оценки</div>
+                </div>
+
+                <!-- 🔍 КНОПКА ПОИСКА В ANILIST -->
+                <div class="form-group">
+                    <button type="button" class="btn btn-secondary" onclick="showAniListSearch('anime')" 
+                            style="margin-bottom: 10px; background: #6e56cf; border: none;">
+                        🔍 Поиск в AniList
+                    </button>
                 </div>
                 
                 <button class="btn" onclick="addAnime()" id="btnAddAnime">🎬 Добавить аниме</button>
@@ -1123,6 +1242,14 @@
                         <span class="star" data-value="5">★</span>
                     </div>
                     <div style="color: var(--text-color); opacity: 0.7; font-size: 12px; margin-top: 5px;" id="mangaRatingHelp">Нажмите на звезду для оценки</div>
+                </div>
+
+                <!-- 🔍 КНОПКА ПОИСКА В ANILIST -->
+                <div class="form-group">
+                    <button type="button" class="btn btn-secondary" onclick="showAniListSearch('manga')" 
+                            style="margin-bottom: 10px; background: #6e56cf; border: none;">
+                        🔍 Поиск в AniList
+                    </button>
                 </div>
                 
                 <button class="btn" onclick="addManga()" id="btnAddManga">📚 Добавить мангу</button>
@@ -1262,7 +1389,7 @@
     <script>
         // 🔧 ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ И КОНСТАНТЫ
         const STORAGE_KEY = 'animanga_tracker_data';
-        const APP_VERSION = '4.0.0'; // Новая версия с исправлениями
+        const APP_VERSION = '4.1.0'; // Новая версия с AniList интеграцией
         
         // 🔄 ПРИНУДИТЕЛЬНОЕ ОБНОВЛЕНИЕ КЭША TELEGRAM
         (function() {
@@ -1466,7 +1593,14 @@
                 markAllEpisodes: "Отметить все эпизоды просмотренными",
                 markAllChapters: "Отметить все главы прочитанными",
                 autoProgress: "Прогресс установлен на максимум для завершенного статуса",
-                maxProgressReached: "Достигнут максимум эпизодов/глав"
+                maxProgressReached: "Достигнут максимум эпизодов/глав",
+                searchAniList: "Поиск в AniList",
+                aniListSearch: "Поиск в AniList",
+                aniListResults: "Результаты поиска",
+                noResultsFound: "Ничего не найдено",
+                tryDifferentQuery: "Попробуйте другой запрос",
+                searchError: "Ошибка поиска",
+                checkInternet: "Проверьте подключение к интернету"
             },
             en: {
                 welcome: "Welcome to AniManga Tracker!",
@@ -1570,9 +1704,234 @@
                 markAllEpisodes: "Mark all episodes as watched",
                 markAllChapters: "Mark all chapters as read",
                 autoProgress: "Progress set to maximum for completed status",
-                maxProgressReached: "Maximum episodes/chapters reached"
+                maxProgressReached: "Maximum episodes/chapters reached",
+                searchAniList: "Search in AniList",
+                aniListSearch: "Search in AniList",
+                aniListResults: "Search results",
+                noResultsFound: "No results found",
+                tryDifferentQuery: "Try different query",
+                searchError: "Search error",
+                checkInternet: "Check internet connection"
             }
         };
+
+        // 🔧 ANILIST API ИНТЕГРАЦИЯ
+        let currentSearchType = 'anime';
+
+        function showAniListSearch(type) {
+            currentSearchType = type;
+            
+            const modalHTML = `
+                <div class="anilist-modal" id="anilistModal">
+                    <div class="anilist-modal-content">
+                        <h3 style="color: var(--accent-color); margin-bottom: 15px; text-align: center;">
+                            🔍 ${type === 'anime' ? getText('searchAnime') : getText('searchManga')} AniList
+                        </h3>
+                        
+                        <div class="anilist-search-box">
+                            <input type="text" id="anilistSearchInput" class="anilist-search-input" 
+                                   placeholder="${type === 'anime' ? getText('searchAnime') : getText('searchManga')}..." 
+                                   onkeypress="handleAniListSearch(event)">
+                            <div class="search-icon">🔍</div>
+                        </div>
+                        
+                        <div id="anilistResults" class="anilist-results">
+                            <div class="anilist-loading">
+                                <div>🔍 Введите название для поиска в базе AniList</div>
+                            </div>
+                        </div>
+                        
+                        <div style="display: flex; gap: 10px; margin-top: 15px;">
+                            <button class="btn btn-secondary" onclick="closeAniListModal()" style="flex: 1;">
+                                ❌ ${getText('cancel')}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+            
+            // Фокус на поле ввода
+            setTimeout(() => {
+                const input = document.getElementById('anilistSearchInput');
+                if (input) input.focus();
+            }, 300);
+        }
+
+        function closeAniListModal() {
+            const modal = document.getElementById('anilistModal');
+            if (modal) {
+                modal.remove();
+            }
+        }
+
+        function handleAniListSearch(event) {
+            if (event.key === 'Enter') {
+                searchAniList();
+            }
+        }
+
+        async function searchAniList() {
+            const query = document.getElementById('anilistSearchInput').value.trim();
+            const resultsContainer = document.getElementById('anilistResults');
+            
+            if (!query) {
+                resultsContainer.innerHTML = '<div class="anilist-error">Введите название для поиска</div>';
+                return;
+            }
+            
+            resultsContainer.innerHTML = `
+                <div class="anilist-loading">
+                    <div class="loading-spinner"></div>
+                    <div>Ищем в базе AniList...</div>
+                </div>
+            `;
+            
+            try {
+                const response = await fetch('https://graphql.anilist.co', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        query: `
+                            query ($search: String, $type: MediaType) {
+                                Page (perPage: 10) {
+                                    media (search: $search, type: $type) {
+                                        id
+                                        title {
+                                            romaji
+                                            english
+                                            native
+                                            userPreferred
+                                        }
+                                        coverImage {
+                                            large
+                                            medium
+                                        }
+                                        episodes
+                                        chapters
+                                        status
+                                        description
+                                        genres
+                                        averageScore
+                                        siteUrl
+                                    }
+                                }
+                            }
+                        `,
+                        variables: {
+                            search: query,
+                            type: currentSearchType.toUpperCase()
+                        }
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.errors) {
+                    throw new Error(data.errors[0].message);
+                }
+                
+                const mediaItems = data.data.Page.media;
+                
+                if (mediaItems.length === 0) {
+                    resultsContainer.innerHTML = `
+                        <div class="anilist-error">
+                            Ничего не найдено 😔<br>
+                            Попробуйте другое название
+                        </div>
+                    `;
+                    return;
+                }
+                
+                resultsContainer.innerHTML = mediaItems.map(item => `
+                    <div class="anilist-result-item" onclick="selectAniListItem(${JSON.stringify(item).replace(/"/g, '&quot;')})">
+                        <img src="${item.coverImage.large || item.coverImage.medium}" 
+                             class="anilist-cover" 
+                             alt="${item.title.userPreferred}"
+                             onerror="this.src='https://via.placeholder.com/60x90/667eea/ffffff?text=🎬'">
+                        <div class="anilist-info">
+                            <div class="anilist-title">${item.title.userPreferred}</div>
+                            <div class="anilist-meta">
+                                ${currentSearchType === 'anime' ? 
+                                    `Эпизоды: ${item.episodes || '?'} • ` : 
+                                    `Главы: ${item.chapters || '?'} • `}
+                                Рейтинг: ${item.averageScore ? (item.averageScore / 10).toFixed(1) + '⭐' : 'Нет'}
+                            </div>
+                            <div class="anilist-meta">
+                                ${item.genres ? item.genres.slice(0, 3).join(', ') : ''}
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+                
+            } catch (error) {
+                console.error('AniList search error:', error);
+                resultsContainer.innerHTML = `
+                    <div class="anilist-error">
+                        Ошибка поиска: ${error.message}<br>
+                        Проверьте подключение к интернету
+                    </div>
+                `;
+            }
+        }
+
+        function selectAniListItem(item) {
+            // Заполняем форму выбранными данными
+            if (currentSearchType === 'anime') {
+                document.getElementById('animeTitle').value = item.title.userPreferred;
+                document.getElementById('animeCover').value = item.coverImage.large || item.coverImage.medium || '';
+                document.getElementById('animeEpisodes').value = item.episodes || 12;
+                
+                // Предпросмотр обложки
+                previewCover('anime');
+                
+                // Автоматический рейтинг на основе оценки AniList
+                if (item.averageScore) {
+                    const rating = Math.round(item.averageScore / 20); // Конвертируем 100-балльную систему в 5-звездочную
+                    currentAnimeRating = Math.min(Math.max(rating, 1), 5);
+                    
+                    document.querySelectorAll('#animeRating .star').forEach((star, index) => {
+                        if (index < currentAnimeRating) {
+                            star.classList.add('active');
+                        } else {
+                            star.classList.remove('active');
+                        }
+                    });
+                }
+                
+            } else {
+                document.getElementById('mangaTitle').value = item.title.userPreferred;
+                document.getElementById('mangaCover').value = item.coverImage.large || item.coverImage.medium || '';
+                document.getElementById('mangaChapters').value = item.chapters || 50;
+                
+                // Предпросмотр обложки
+                previewCover('manga');
+                
+                // Автоматический рейтинг
+                if (item.averageScore) {
+                    const rating = Math.round(item.averageScore / 20);
+                    currentMangaRating = Math.min(Math.max(rating, 1), 5);
+                    
+                    document.querySelectorAll('#mangaRating .star').forEach((star, index) => {
+                        if (index < currentMangaRating) {
+                            star.classList.add('active');
+                        } else {
+                            star.classList.remove('active');
+                        }
+                    });
+                }
+            }
+            
+            // Закрываем модальное окно
+            closeAniListModal();
+            
+            // Показываем уведомление
+            showNotification('✅ Найдено в AniList', `Данные для "${item.title.userPreferred}" загружены`, 'success');
+        }
 
         // 🔧 ИНИЦИАЛИЗАЦИЯ TELEGRAM WEB APP
         function initTelegramApp() {
@@ -2839,6 +3198,14 @@
             }
         }
 
+        // 🔧 ОБРАБОТЧИКИ ДЛЯ TELEGRAM WEB APP
+        document.addEventListener('click', function(event) {
+            const modal = document.getElementById('anilistModal');
+            if (event.target === modal) {
+                closeAniListModal();
+            }
+        });
+
         // 🔧 ИНИЦИАЛИЗАЦИЯ ПРИЛОЖЕНИЯ
         document.addEventListener('DOMContentLoaded', function() {
             initializePWA();
@@ -2862,7 +3229,7 @@
                 );
             }, 1500);
             
-            console.log('AniManga Tracker v' + APP_VERSION + ' initialized successfully');
+            console.log('AniManga Tracker v' + APP_VERSION + ' with AniList integration initialized successfully');
         });
 
         // 🔧 ОБРАБОТЧИКИ ДЛЯ TELEGRAM BOT
@@ -2885,4 +3252,4 @@
         }
     </script>
 </body>
-    </html>
+                    </html>
