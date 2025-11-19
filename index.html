@@ -1389,22 +1389,33 @@
     <script>
         // 🔧 ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ И КОНСТАНТЫ
         const STORAGE_KEY = 'animanga_tracker_data';
-        const APP_VERSION = '4.1.0'; // Новая версия с AniList интеграцией
+        const APP_VERSION = '4.2.0'; // Новая версия с исправлениями кэша
         
-        // 🔄 ПРИНУДИТЕЛЬНОЕ ОБНОВЛЕНИЕ КЭША TELEGRAM
+        // 🔄 АГРЕССИВНОЕ ОБНОВЛЕНИЕ КЭША
         (function() {
+            // Принудительно очищаем кэш
+            if ('caches' in window) {
+                caches.keys().then(function(names) {
+                    names.forEach(function(name) {
+                        caches.delete(name);
+                    });
+                });
+            }
+            
             // Добавляем параметр версии к URL
             const currentUrl = window.location.href;
+            const versionParam = 'v=' + APP_VERSION + '-' + Date.now();
             if (!currentUrl.includes('v=')) {
-                const newUrl = currentUrl + (currentUrl.includes('?') ? '&' : '?') + 'v=' + APP_VERSION + '-' + Date.now();
+                const newUrl = currentUrl + (currentUrl.includes('?') ? '&' : '?') + versionParam;
                 window.history.replaceState(null, null, newUrl);
             }
             
             // Очищаем кэш localStorage при обновлении версии
             const storedVersion = localStorage.getItem('app_version');
             if (storedVersion !== APP_VERSION) {
+                localStorage.clear();
                 localStorage.setItem('app_version', APP_VERSION);
-                console.log('App updated to version:', APP_VERSION);
+                console.log('Cache cleared, app updated to version:', APP_VERSION);
             }
         })();
 
@@ -1423,6 +1434,225 @@
         let deferredPrompt = null;
         let isPWAInstalled = false;
         let isTelegramWebApp = false;
+
+        // 🔧 ANILIST API ИНТЕГРАЦИЯ
+        let currentSearchType = 'anime';
+
+        function showAniListSearch(type) {
+            currentSearchType = type;
+            
+            const modalHTML = `
+                <div class="anilist-modal" id="anilistModal">
+                    <div class="anilist-modal-content">
+                        <h3 style="color: var(--accent-color); margin-bottom: 15px; text-align: center;">
+                            🔍 ${type === 'anime' ? 'Поиск аниме' : 'Поиск манги'} в AniList
+                        </h3>
+                        
+                        <div class="anilist-search-box">
+                            <input type="text" id="anilistSearchInput" class="anilist-search-input" 
+                                   placeholder="${type === 'anime' ? 'Введите название аниме...' : 'Введите название манги...'}" 
+                                   onkeypress="handleAniListSearch(event)">
+                            <div class="search-icon">🔍</div>
+                        </div>
+                        
+                        <div id="anilistResults" class="anilist-results">
+                            <div class="anilist-loading">
+                                <div>🔍 Введите название для поиска в базе AniList</div>
+                            </div>
+                        </div>
+                        
+                        <div style="display: flex; gap: 10px; margin-top: 15px;">
+                            <button class="btn" onclick="searchAniList()" style="flex: 1;">🔍 Искать</button>
+                            <button class="btn btn-secondary" onclick="closeAniListModal()" style="flex: 1;">
+                                ❌ Отмена
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+            
+            // Фокус на поле ввода
+            setTimeout(() => {
+                const input = document.getElementById('anilistSearchInput');
+                if (input) input.focus();
+            }, 300);
+        }
+
+        function closeAniListModal() {
+            const modal = document.getElementById('anilistModal');
+            if (modal) {
+                modal.remove();
+            }
+        }
+
+        function handleAniListSearch(event) {
+            if (event.key === 'Enter') {
+                searchAniList();
+            }
+        }
+
+        async function searchAniList() {
+            const query = document.getElementById('anilistSearchInput').value.trim();
+            const resultsContainer = document.getElementById('anilistResults');
+            
+            if (!query) {
+                resultsContainer.innerHTML = '<div class="anilist-error">Введите название для поиска</div>';
+                return;
+            }
+            
+            resultsContainer.innerHTML = `
+                <div class="anilist-loading">
+                    <div class="loading-spinner"></div>
+                    <div>Ищем в базе AniList...</div>
+                </div>
+            `;
+            
+            try {
+                const response = await fetch('https://graphql.anilist.co', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        query: `
+                            query ($search: String, $type: MediaType) {
+                                Page (perPage: 10) {
+                                    media (search: $search, type: $type) {
+                                        id
+                                        title {
+                                            romaji
+                                            english
+                                            native
+                                            userPreferred
+                                        }
+                                        coverImage {
+                                            large
+                                            medium
+                                        }
+                                        episodes
+                                        chapters
+                                        status
+                                        description
+                                        genres
+                                        averageScore
+                                        siteUrl
+                                    }
+                                }
+                            }
+                        `,
+                        variables: {
+                            search: query,
+                            type: currentSearchType.toUpperCase()
+                        }
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.errors) {
+                    throw new Error(data.errors[0].message);
+                }
+                
+                const mediaItems = data.data.Page.media;
+                
+                if (mediaItems.length === 0) {
+                    resultsContainer.innerHTML = `
+                        <div class="anilist-error">
+                            Ничего не найдено 😔<br>
+                            Попробуйте другое название
+                        </div>
+                    `;
+                    return;
+                }
+                
+                resultsContainer.innerHTML = mediaItems.map(item => `
+                    <div class="anilist-result-item" onclick="selectAniListItem(${JSON.stringify(item).replace(/"/g, '&quot;')})">
+                        <img src="${item.coverImage.large || item.coverImage.medium}" 
+                             class="anilist-cover" 
+                             alt="${item.title.userPreferred}"
+                             onerror="this.src='https://via.placeholder.com/60x90/667eea/ffffff?text=🎬'">
+                        <div class="anilist-info">
+                            <div class="anilist-title">${item.title.userPreferred}</div>
+                            <div class="anilist-meta">
+                                ${currentSearchType === 'anime' ? 
+                                    `Эпизоды: ${item.episodes || '?'} • ` : 
+                                    `Главы: ${item.chapters || '?'} • `}
+                                Рейтинг: ${item.averageScore ? (item.averageScore / 10).toFixed(1) + '⭐' : 'Нет'}
+                            </div>
+                            <div class="anilist-meta">
+                                ${item.genres ? item.genres.slice(0, 3).join(', ') : ''}
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+                
+            } catch (error) {
+                console.error('AniList search error:', error);
+                resultsContainer.innerHTML = `
+                    <div class="anilist-error">
+                        Ошибка поиска: ${error.message}<br>
+                        Проверьте подключение к интернету
+                    </div>
+                `;
+            }
+        }
+
+        function selectAniListItem(item) {
+            // Заполняем форму выбранными данными
+            if (currentSearchType === 'anime') {
+                document.getElementById('animeTitle').value = item.title.userPreferred;
+                document.getElementById('animeCover').value = item.coverImage.large || item.coverImage.medium || '';
+                document.getElementById('animeEpisodes').value = item.episodes || 12;
+                
+                // Предпросмотр обложки
+                previewCover('anime');
+                
+                // Автоматический рейтинг на основе оценки AniList
+                if (item.averageScore) {
+                    const rating = Math.round(item.averageScore / 20); // Конвертируем 100-балльную систему в 5-звездочную
+                    currentAnimeRating = Math.min(Math.max(rating, 1), 5);
+                    
+                    document.querySelectorAll('#animeRating .star').forEach((star, index) => {
+                        if (index < currentAnimeRating) {
+                            star.classList.add('active');
+                        } else {
+                            star.classList.remove('active');
+                        }
+                    });
+                }
+                
+            } else {
+                document.getElementById('mangaTitle').value = item.title.userPreferred;
+                document.getElementById('mangaCover').value = item.coverImage.large || item.coverImage.medium || '';
+                document.getElementById('mangaChapters').value = item.chapters || 50;
+                
+                // Предпросмотр обложки
+                previewCover('manga');
+                
+                // Автоматический рейтинг
+                if (item.averageScore) {
+                    const rating = Math.round(item.averageScore / 20);
+                    currentMangaRating = Math.min(Math.max(rating, 1), 5);
+                    
+                    document.querySelectorAll('#mangaRating .star').forEach((star, index) => {
+                        if (index < currentMangaRating) {
+                            star.classList.add('active');
+                        } else {
+                            star.classList.remove('active');
+                        }
+                    });
+                }
+            }
+            
+            // Закрываем модальное окно
+            closeAniListModal();
+            
+            // Показываем уведомление
+            showNotification('✅ Найдено в AniList', `Данные для "${item.title.userPreferred}" загружены`, 'success');
+        }
 
         // 🔧 PWA ФУНКЦИОНАЛЬНОСТЬ
         function initializePWA() {
@@ -1714,224 +1944,6 @@
                 checkInternet: "Check internet connection"
             }
         };
-
-        // 🔧 ANILIST API ИНТЕГРАЦИЯ
-        let currentSearchType = 'anime';
-
-        function showAniListSearch(type) {
-            currentSearchType = type;
-            
-            const modalHTML = `
-                <div class="anilist-modal" id="anilistModal">
-                    <div class="anilist-modal-content">
-                        <h3 style="color: var(--accent-color); margin-bottom: 15px; text-align: center;">
-                            🔍 ${type === 'anime' ? getText('searchAnime') : getText('searchManga')} AniList
-                        </h3>
-                        
-                        <div class="anilist-search-box">
-                            <input type="text" id="anilistSearchInput" class="anilist-search-input" 
-                                   placeholder="${type === 'anime' ? getText('searchAnime') : getText('searchManga')}..." 
-                                   onkeypress="handleAniListSearch(event)">
-                            <div class="search-icon">🔍</div>
-                        </div>
-                        
-                        <div id="anilistResults" class="anilist-results">
-                            <div class="anilist-loading">
-                                <div>🔍 Введите название для поиска в базе AniList</div>
-                            </div>
-                        </div>
-                        
-                        <div style="display: flex; gap: 10px; margin-top: 15px;">
-                            <button class="btn btn-secondary" onclick="closeAniListModal()" style="flex: 1;">
-                                ❌ ${getText('cancel')}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            document.body.insertAdjacentHTML('beforeend', modalHTML);
-            
-            // Фокус на поле ввода
-            setTimeout(() => {
-                const input = document.getElementById('anilistSearchInput');
-                if (input) input.focus();
-            }, 300);
-        }
-
-        function closeAniListModal() {
-            const modal = document.getElementById('anilistModal');
-            if (modal) {
-                modal.remove();
-            }
-        }
-
-        function handleAniListSearch(event) {
-            if (event.key === 'Enter') {
-                searchAniList();
-            }
-        }
-
-        async function searchAniList() {
-            const query = document.getElementById('anilistSearchInput').value.trim();
-            const resultsContainer = document.getElementById('anilistResults');
-            
-            if (!query) {
-                resultsContainer.innerHTML = '<div class="anilist-error">Введите название для поиска</div>';
-                return;
-            }
-            
-            resultsContainer.innerHTML = `
-                <div class="anilist-loading">
-                    <div class="loading-spinner"></div>
-                    <div>Ищем в базе AniList...</div>
-                </div>
-            `;
-            
-            try {
-                const response = await fetch('https://graphql.anilist.co', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        query: `
-                            query ($search: String, $type: MediaType) {
-                                Page (perPage: 10) {
-                                    media (search: $search, type: $type) {
-                                        id
-                                        title {
-                                            romaji
-                                            english
-                                            native
-                                            userPreferred
-                                        }
-                                        coverImage {
-                                            large
-                                            medium
-                                        }
-                                        episodes
-                                        chapters
-                                        status
-                                        description
-                                        genres
-                                        averageScore
-                                        siteUrl
-                                    }
-                                }
-                            }
-                        `,
-                        variables: {
-                            search: query,
-                            type: currentSearchType.toUpperCase()
-                        }
-                    })
-                });
-                
-                const data = await response.json();
-                
-                if (data.errors) {
-                    throw new Error(data.errors[0].message);
-                }
-                
-                const mediaItems = data.data.Page.media;
-                
-                if (mediaItems.length === 0) {
-                    resultsContainer.innerHTML = `
-                        <div class="anilist-error">
-                            Ничего не найдено 😔<br>
-                            Попробуйте другое название
-                        </div>
-                    `;
-                    return;
-                }
-                
-                resultsContainer.innerHTML = mediaItems.map(item => `
-                    <div class="anilist-result-item" onclick="selectAniListItem(${JSON.stringify(item).replace(/"/g, '&quot;')})">
-                        <img src="${item.coverImage.large || item.coverImage.medium}" 
-                             class="anilist-cover" 
-                             alt="${item.title.userPreferred}"
-                             onerror="this.src='https://via.placeholder.com/60x90/667eea/ffffff?text=🎬'">
-                        <div class="anilist-info">
-                            <div class="anilist-title">${item.title.userPreferred}</div>
-                            <div class="anilist-meta">
-                                ${currentSearchType === 'anime' ? 
-                                    `Эпизоды: ${item.episodes || '?'} • ` : 
-                                    `Главы: ${item.chapters || '?'} • `}
-                                Рейтинг: ${item.averageScore ? (item.averageScore / 10).toFixed(1) + '⭐' : 'Нет'}
-                            </div>
-                            <div class="anilist-meta">
-                                ${item.genres ? item.genres.slice(0, 3).join(', ') : ''}
-                            </div>
-                        </div>
-                    </div>
-                `).join('');
-                
-            } catch (error) {
-                console.error('AniList search error:', error);
-                resultsContainer.innerHTML = `
-                    <div class="anilist-error">
-                        Ошибка поиска: ${error.message}<br>
-                        Проверьте подключение к интернету
-                    </div>
-                `;
-            }
-        }
-
-        function selectAniListItem(item) {
-            // Заполняем форму выбранными данными
-            if (currentSearchType === 'anime') {
-                document.getElementById('animeTitle').value = item.title.userPreferred;
-                document.getElementById('animeCover').value = item.coverImage.large || item.coverImage.medium || '';
-                document.getElementById('animeEpisodes').value = item.episodes || 12;
-                
-                // Предпросмотр обложки
-                previewCover('anime');
-                
-                // Автоматический рейтинг на основе оценки AniList
-                if (item.averageScore) {
-                    const rating = Math.round(item.averageScore / 20); // Конвертируем 100-балльную систему в 5-звездочную
-                    currentAnimeRating = Math.min(Math.max(rating, 1), 5);
-                    
-                    document.querySelectorAll('#animeRating .star').forEach((star, index) => {
-                        if (index < currentAnimeRating) {
-                            star.classList.add('active');
-                        } else {
-                            star.classList.remove('active');
-                        }
-                    });
-                }
-                
-            } else {
-                document.getElementById('mangaTitle').value = item.title.userPreferred;
-                document.getElementById('mangaCover').value = item.coverImage.large || item.coverImage.medium || '';
-                document.getElementById('mangaChapters').value = item.chapters || 50;
-                
-                // Предпросмотр обложки
-                previewCover('manga');
-                
-                // Автоматический рейтинг
-                if (item.averageScore) {
-                    const rating = Math.round(item.averageScore / 20);
-                    currentMangaRating = Math.min(Math.max(rating, 1), 5);
-                    
-                    document.querySelectorAll('#mangaRating .star').forEach((star, index) => {
-                        if (index < currentMangaRating) {
-                            star.classList.add('active');
-                        } else {
-                            star.classList.remove('active');
-                        }
-                    });
-                }
-            }
-            
-            // Закрываем модальное окно
-            closeAniListModal();
-            
-            // Показываем уведомление
-            showNotification('✅ Найдено в AniList', `Данные для "${item.title.userPreferred}" загружены`, 'success');
-        }
 
         // 🔧 ИНИЦИАЛИЗАЦИЯ TELEGRAM WEB APP
         function initTelegramApp() {
@@ -3222,12 +3234,12 @@
             
             setTimeout(() => {
                 showNotification(
-                    getText('welcome'), 
-                    getText('welcomeSubtitle'), 
+                    '🔄 Обновлено!', 
+                    'Добавлен поиск в AniList! Нажмите кнопку "🔍 Поиск в AniList"', 
                     'info', 
-                    6000
+                    8000
                 );
-            }, 1500);
+            }, 2000);
             
             console.log('AniManga Tracker v' + APP_VERSION + ' with AniList integration initialized successfully');
         });
@@ -3252,4 +3264,4 @@
         }
     </script>
 </body>
-                    </html>
+    </html>
