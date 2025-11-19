@@ -1,16 +1,23 @@
 {
   "name": "AniManga Tracker",
   "short_name": "AniManga",
-  "start_url": ".",
+  "description": "Track your anime and manga progress",
+  "start_url": "/animanga-tracker/",
   "display": "standalone",
-  "background_color": "#1a1a2e",
-  "theme_color": "#1a1a2e",
+  "background_color": "#0f0f23",
+  "theme_color": "#667eea",
   "orientation": "portrait",
   "icons": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/4712/4712109.png",
+      "src": "icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
-  ]
+  ],
+  "categories": ["entertainment", "productivity"]
 }
