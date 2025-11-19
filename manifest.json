@@ -1,12 +1,13 @@
 {
   "name": "AniManga Tracker",
   "short_name": "AniManga",
-  "description": "Track your anime and manga progress",
-  "start_url": "/animanga-tracker/",
+  "description": "Track your anime and manga progress with AniList integration",
+  "start_url": "/animanga-tracker/?v=4.2.0",
   "display": "standalone",
   "background_color": "#0f0f23",
   "theme_color": "#667eea",
   "orientation": "portrait",
+  "scope": "/animanga-tracker/",
   "icons": [
     {
       "src": "icon-192x192.png",
